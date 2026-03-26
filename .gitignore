@@ -1,5 +1,7 @@
 # Prerequisites
 *.d
+#Config Local
+config.json
 
 # Object files
 *.o
