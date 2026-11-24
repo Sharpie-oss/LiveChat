@@ -1,5 +1,17 @@
 # Changelog
 
+## 2.0.1 — Lecture des vidéos
+
+### Corrections de bugs
+
+- **Vidéos Discord** : aucune ne se lisait. Le lecteur de Windows refuse les liens qui contiennent des paramètres (`?ex=…&is=…&hm=…`), or Discord signe tous ses liens de pièces jointes. Les vidéos sont maintenant téléchargées dans un fichier temporaire (500 Mo maximum, progression affichée), lues en local puis supprimées. Les fichiers restants sont nettoyés au démarrage.
+
+### Améliorations
+
+- **Média illisible** : au lieu de passer silencieusement au suivant, la fenêtre affiche la raison pendant 4 s (format non pris en charge, comme le WebM ; lien expiré ; fichier trop volumineux).
+- **Paramètres** : un token au mauvais format (Client Secret collé à la place du Bot Token) est signalé.
+- 10 nouveaux tests (89 au total).
+
 ## 2.0.0 — Refonte complète
 
 Le dépôt ne contenait que des binaires compilés : le code a été décompilé, relu en entier, puis réécrit.

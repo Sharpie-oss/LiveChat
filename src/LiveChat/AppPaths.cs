@@ -9,6 +9,10 @@ public static class AppPaths
     /// </summary>
     public static string DataDirectory { get; } = ResolveDataDirectory();
 
+    /// <summary>Vrai si le dossier de données a été remplacé par LIVECHAT_DATA_DIR.</summary>
+    public static bool IsDataDirectoryOverridden =>
+        !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("LIVECHAT_DATA_DIR"));
+
     public static string SettingsFile => Path.Combine(DataDirectory, "settings.json");
 
     public static string LogDirectory => Path.Combine(DataDirectory, "logs");

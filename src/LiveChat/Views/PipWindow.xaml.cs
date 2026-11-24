@@ -28,6 +28,7 @@ public partial class PipWindow : Window
     private static readonly TimeSpan VideoOpenTimeout = TimeSpan.FromSeconds(20);
     private static readonly TimeSpan StallMargin = TimeSpan.FromSeconds(30);
     private static readonly TimeSpan FileCardDuration = TimeSpan.FromSeconds(4);
+    private static readonly TimeSpan ErrorCardDuration = TimeSpan.FromSeconds(4);
 
     private enum PlaybackMode
     {
@@ -46,6 +47,7 @@ public partial class PipWindow : Window
     private DateTime _startedAt;
     private TimeSpan _duration;
     private MediaElement? _video;
+    private string? _tempVideoPath;
     private DateTime? _videoOpenedAt;
     private bool _looping;
     private CancellationTokenSource? _loadCts;
@@ -305,7 +307,20 @@ public partial class PipWindow : Window
 
                 case MediaKind.Video:
                 case MediaKind.LoopingVideo:
-                    StartVideo(item, id);
+                    var videoCts = _loadCts = new CancellationTokenSource();
+                    var source = await PrepareVideoAsync(item, id, videoCts.Token);
+                    if (id != _presentationId)
+                    {
+                        // Passé pendant le téléchargement : on ne garde pas le fichier temporaire.
+                        if (VideoCache.IsTemporary(source))
+                        {
+                            VideoCache.TryDelete(source);
+                        }
+
+                        return;
+                    }
+
+                    StartVideo(item, id, source);
                     break;
 
                 case MediaKind.Text:
@@ -314,7 +329,7 @@ public partial class PipWindow : Window
                     break;
 
                 default:
-                    MediaHost.Children.Add(CreateFileCard(item.FileName ?? "Fichier"));
+                    MediaHost.Children.Add(CreateNotice("", item.FileName ?? "Fichier"));
                     StartTimed(FileCardDuration);
                     break;
             }
@@ -325,9 +340,35 @@ public partial class PipWindow : Window
             if (id == _presentationId)
             {
                 Log.Warn($"Affichage impossible de {item.Url ?? item.Kind.ToString()}.", ex);
-                Finish(id);
+                ShowError(id, ex is InvalidDataException
+                    ? "Média trop volumineux pour être affiché."
+                    : "Impossible de charger ce média (lien expiré ou inaccessible ?).");
             }
         }
+    }
+
+    /// <summary>Remplace le média par un court message d'erreur, au lieu de le sauter sans explication.</summary>
+    private void ShowError(int id, string message)
+    {
+        if (id != _presentationId)
+        {
+            return;
+        }
+
+        _ticker.Stop();
+        if (_video is not null)
+        {
+            _video.Stop();
+            _video.Close();
+            _video.Source = null;
+            _video = null;
+        }
+
+        MediaHost.Children.Clear();
+        CaptionBorder.Visibility = Visibility.Collapsed;
+        SpoilerBadge.Visibility = Visibility.Collapsed;
+        MediaHost.Children.Add(CreateNotice("", message));
+        StartTimed(ErrorCardDuration);
     }
 
     private void StartTimed(TimeSpan duration)
@@ -339,7 +380,49 @@ public partial class PipWindow : Window
         _ticker.Start();
     }
 
-    private void StartVideo(MediaItem item, int id)
+    /// <summary>
+    /// Renvoie le fichier local à lire : les vidéos distantes sont d'abord téléchargées (voir <see cref="VideoCache"/>),
+    /// avec un indicateur de chargement et la progression du téléchargement.
+    /// </summary>
+    private async Task<string> PrepareVideoAsync(MediaItem item, int id, CancellationToken cancellationToken)
+    {
+        var uri = new Uri(item.Url!, UriKind.Absolute);
+        if (uri.IsFile)
+        {
+            return uri.LocalPath;
+        }
+
+        var loading = CreateLoadingText();
+        MediaHost.Children.Add(loading);
+        SetProgress(0, visible: true);
+
+        var path = VideoCache.CreateTempPath(item.Url!);
+        _tempVideoPath = path;
+        var progress = new Progress<double>(value =>
+        {
+            if (id == _presentationId)
+            {
+                SetProgress(value, visible: true);
+                loading.Text = $"Chargement de la vidéo… {value:P0}";
+            }
+        });
+
+        await HttpClients.DownloadToFileAsync(item.Url!, path, VideoCache.MaxVideoBytes, progress, cancellationToken);
+        MediaHost.Children.Remove(loading);
+        return path;
+    }
+
+    private TextBlock CreateLoadingText() => new()
+    {
+        Text = "Chargement de la vidéo…",
+        FontSize = 13,
+        HorizontalAlignment = HorizontalAlignment.Center,
+        VerticalAlignment = VerticalAlignment.Center,
+        Margin = new Thickness(24),
+        Foreground = (Brush)FindResource("MutedTextBrush"),
+    };
+
+    private void StartVideo(MediaItem item, int id, string localPath)
     {
         _looping = item.Kind == MediaKind.LoopingVideo;
         _videoOpenedAt = null;
@@ -367,7 +450,8 @@ public partial class PipWindow : Window
             if (id == _presentationId)
             {
                 Log.Warn($"Lecture impossible de {item.Url}.", e.ErrorException);
-                Finish(id);
+                var format = VideoCache.GetExtension(item.Url!).TrimStart('.').ToUpperInvariant();
+                ShowError(id, $"Vidéo illisible : le format {format} n'est pas pris en charge par le lecteur de Windows.");
             }
         };
         video.Loaded += (_, _) =>
@@ -379,7 +463,7 @@ public partial class PipWindow : Window
         };
 
         ApplySpoiler(video, item);
-        video.Source = new Uri(item.Url!, UriKind.Absolute);
+        video.Source = new Uri(localPath, UriKind.Absolute);
         _video = video;
         MediaHost.Children.Add(video);
 
@@ -503,6 +587,12 @@ public partial class PipWindow : Window
             _video = null;
         }
 
+        if (_tempVideoPath is { } tempVideo)
+        {
+            _tempVideoPath = null;
+            _ = DeleteTempVideoAsync(tempVideo);
+        }
+
         foreach (var image in MediaHost.Children.OfType<Image>())
         {
             ImageBehavior.SetAnimatedSource(image, null);
@@ -512,6 +602,20 @@ public partial class PipWindow : Window
         CaptionBorder.Visibility = Visibility.Collapsed;
         SpoilerBadge.Visibility = Visibility.Collapsed;
         SetProgress(0, visible: false);
+    }
+
+    /// <summary>Le lecteur libère le fichier de façon asynchrone : on réessaie quelques secondes plus tard.</summary>
+    private static async Task DeleteTempVideoAsync(string path)
+    {
+        for (var attempt = 0; attempt < 5; attempt++)
+        {
+            if (VideoCache.TryDelete(path))
+            {
+                return;
+            }
+
+            await Task.Delay(TimeSpan.FromSeconds(2));
+        }
     }
 
     private void EnterIdle()
@@ -594,29 +698,31 @@ public partial class PipWindow : Window
         Foreground = (Brush)FindResource("TextBrush"),
     };
 
-    private StackPanel CreateFileCard(string fileName)
+    /// <summary>Petit message centré avec une icône (pièce jointe non affichable, erreur de lecture...).</summary>
+    private StackPanel CreateNotice(string glyph, string text)
     {
         var panel = new StackPanel
         {
-            Orientation = Orientation.Horizontal,
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(24, 12, 24, 12),
         };
         panel.Children.Add(new TextBlock
         {
-            Text = "",
+            Text = glyph,
             FontFamily = (FontFamily)FindResource("IconFont"),
-            FontSize = 18,
-            Margin = new Thickness(0, 0, 10, 0),
-            VerticalAlignment = VerticalAlignment.Center,
+            FontSize = 22,
+            HorizontalAlignment = HorizontalAlignment.Center,
             Foreground = (Brush)FindResource("MutedTextBrush"),
         });
         panel.Children.Add(new TextBlock
         {
-            Text = fileName,
+            Text = text,
             FontSize = 13,
-            TextTrimming = TextTrimming.CharacterEllipsis,
-            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(0, 10, 0, 0),
+            MaxWidth = 340,
+            TextWrapping = TextWrapping.Wrap,
+            TextAlignment = TextAlignment.Center,
             Foreground = (Brush)FindResource("MutedTextBrush"),
         });
         return panel;

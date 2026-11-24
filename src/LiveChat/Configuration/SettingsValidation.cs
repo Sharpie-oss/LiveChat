@@ -39,6 +39,23 @@ public static partial class SettingsValidation
         return token;
     }
 
+    /// <summary>
+    /// Vérifie localement le format d'un Bot Token (règles de Discord.Net : au moins 58 caractères,
+    /// premier segment = identifiant du bot encodé en base64). Évite de confondre avec le Client Secret OAuth2.
+    /// </summary>
+    public static bool IsBotTokenFormat(string token)
+    {
+        try
+        {
+            Discord.TokenUtils.ValidateToken(Discord.TokenType.Bot, token);
+            return true;
+        }
+        catch (ArgumentException)
+        {
+            return false;
+        }
+    }
+
     [GeneratedRegex(@"discord(?:app)?\.com/channels/(?:\d+|@me)/(?<channel>\d+)", RegexOptions.IgnoreCase)]
     private static partial Regex ChannelLinkRegex();
 
