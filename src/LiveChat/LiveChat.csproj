@@ -1,0 +1,42 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <!-- Windows Forms sert uniquement à l'icône de la zone de notification (NotifyIcon). -->
+    <UseWindowsForms>true</UseWindowsForms>
+    <AssemblyName>LiveChat</AssemblyName>
+    <RootNamespace>LiveChat</RootNamespace>
+    <Version>2.0.0</Version>
+    <Description>Affiche en incrustation (picture-in-picture) les médias postés dans un salon Discord.</Description>
+    <ApplicationIcon>Assets\LiveChat.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <SatelliteResourceLanguages>fr</SatelliteResourceLanguages>
+    <!-- WPF lit la prise en charge du DPI dans app.manifest ; cet avertissement ne concerne que WinForms. -->
+    <NoWarn>$(NoWarn);WFO0003</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Évite les conflits de noms entre WPF et WinForms/System.Drawing (Application, Image, Color...). -->
+    <Using Remove="System.Windows.Forms" />
+    <Using Remove="System.Drawing" />
+    <Using Include="System.IO" />
+    <Using Include="System.Net.Http" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\LiveChat.ico" />
+    <Resource Include="Assets\LiveChat.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="LiveChat.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Discord.Net.WebSocket" Version="3.20.2" />
+    <PackageReference Include="WpfAnimatedGif" Version="2.0.2" />
+  </ItemGroup>
+
+</Project>

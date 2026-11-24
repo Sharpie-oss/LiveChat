@@ -1,0 +1,53 @@
+using LiveChat.Models;
+using LiveChat.Services;
+
+namespace LiveChat.Tests;
+
+public class MediaQueueTests
+{
+    private static MediaItem Item(string name) => new(MediaKind.Image, name) { Url = $"https://cdn/{name}.png" };
+
+    [Fact]
+    public void Enqueue_KeepsOrder()
+    {
+        var queue = new MediaQueue();
+        queue.Enqueue([Item("a"), Item("b"), Item("c")]);
+
+        Assert.True(queue.TryDequeue(out var first));
+        Assert.True(queue.TryDequeue(out var second));
+        Assert.Equal("a", first.Author);
+        Assert.Equal("b", second.Author);
+        Assert.Equal(1, queue.Count);
+    }
+
+    [Fact]
+    public void Enqueue_DropsItemsBeyondCapacity()
+    {
+        var queue = new MediaQueue { Capacity = 2 };
+
+        var dropped = queue.Enqueue([Item("a"), Item("b"), Item("c"), Item("d")]);
+
+        Assert.Equal(2, dropped);
+        Assert.Equal(2, queue.Count);
+    }
+
+    [Fact]
+    public void Clear_EmptiesQueue()
+    {
+        var queue = new MediaQueue();
+        queue.Enqueue([Item("a"), Item("b")]);
+
+        queue.Clear();
+
+        Assert.Equal(0, queue.Count);
+        Assert.False(queue.TryDequeue(out _));
+    }
+
+    [Fact]
+    public void Capacity_IsAtLeastOne()
+    {
+        var queue = new MediaQueue { Capacity = 0 };
+
+        Assert.Equal(1, queue.Capacity);
+    }
+}

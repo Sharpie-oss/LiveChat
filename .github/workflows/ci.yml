@@ -1,0 +1,25 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restaurer
+        run: dotnet restore LiveChat.sln
+
+      - name: Compiler
+        run: dotnet build LiveChat.sln --configuration Release --no-restore
+
+      - name: Tester
+        run: dotnet test LiveChat.sln --configuration Release --no-build
