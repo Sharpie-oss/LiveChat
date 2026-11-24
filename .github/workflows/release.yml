@@ -27,12 +27,9 @@ jobs:
         shell: pwsh
         run: |
           $version = '${{ github.ref_name }}'.TrimStart('v')
+          # Version autonome : un seul exe, runtime .NET inclus (voir Properties/PublishProfiles/win-x64.pubxml).
           dotnet publish src/LiveChat/LiveChat.csproj `
-            --configuration Release `
-            --runtime win-x64 `
-            --self-contained false `
-            -p:PublishSingleFile=true `
-            -p:DebugType=embedded `
+            -p:PublishProfile=win-x64 `
             -p:Version=$version `
             --output publish
           Compress-Archive -Path publish/* -DestinationPath LiveChat-win-x64.zip

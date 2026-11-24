@@ -20,8 +20,10 @@ LiveChat affiche **en incrustation, par-dessus vos jeux et applications**, les i
 
 ## Installation
 
-1. Installez le [.NET 10 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/10.0), version « Windows Desktop Runtime x64 ».
-2. Téléchargez `LiveChat-win-x64.zip` depuis la [dernière release](https://github.com/Sharpie-oss/LiveChat/releases/latest) et décompressez-le dans un dossier où vous avez les droits d'écriture (par exemple `%LOCALAPPDATA%\LiveChat`), afin que la mise à jour automatique puisse remplacer les fichiers.
+LiveChat est **autonome** : un seul `LiveChat.exe` (Windows 10/11 64 bits), sans .NET à installer.
+
+1. Téléchargez `LiveChat-win-x64.zip` depuis la [dernière release](https://github.com/Sharpie-oss/LiveChat/releases/latest).
+2. Décompressez-le dans un dossier où vous avez les droits d'écriture (par exemple `%LOCALAPPDATA%\LiveChat`), afin que la mise à jour automatique puisse remplacer l'exécutable.
 3. Lancez `LiveChat.exe`. La fenêtre de configuration s'ouvre au premier démarrage.
 
 ## Créer le bot Discord
@@ -83,6 +85,12 @@ dotnet test LiveChat.sln
 dotnet run --project src/LiveChat -- --test
 ```
 
+Pour produire l'exécutable autonome (dossier `publish/`) :
+
+```powershell
+dotnet publish src/LiveChat/LiveChat.csproj -p:PublishProfile=win-x64
+```
+
 Arborescence :
 
 ```
@@ -107,6 +115,6 @@ git tag v2.0.0
 git push origin v2.0.0
 ```
 
-Le workflow `release.yml` publie alors `LiveChat-win-x64.zip` (un seul exécutable) et sa somme SHA-256 dans une release GitHub. C'est cette archive qu'utilise la mise à jour automatique.
+Le workflow `release.yml` publie alors `LiveChat-win-x64.zip` (un seul exécutable autonome, environ 62 Mo) et sa somme SHA-256 dans une release GitHub. C'est cette archive qu'utilise la mise à jour automatique.
 
 Voir [CHANGELOG.md](CHANGELOG.md) pour l'historique des versions.

@@ -486,3 +486,5 @@ publish/
 LiveChat-win-x64.zip*
 # Ancienne configuration v1 (token en clair)
 config.json
+# Profil de publication autonome de LiveChat (ne contient aucun secret)
+!src/LiveChat/Properties/PublishProfiles/win-x64.pubxml

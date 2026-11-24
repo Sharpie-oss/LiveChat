@@ -47,6 +47,7 @@ Le dépôt ne contenait que des binaires compilés : le code a été décompilé
 ### Technique
 
 - Passage de .NET 8 (support terminé en novembre 2026) à **.NET 10 LTS**.
+- **Exécutable autonome** : un seul `LiveChat.exe` qui embarque le runtime .NET et WPF, sans rien à installer. La v1 était livrée avec une vingtaine de DLL et exigeait le .NET 8 Desktop Runtime.
 - Seul `Discord.Net.WebSocket` 3.20 est référencé, au lieu du méta-paquet complet (Commands, Interactions, Webhook… inutilisés).
 - Code organisé en couches (configuration, services, vues). La logique (analyse des messages, file, paramètres, mises à jour) est couverte par 79 tests unitaires.
 - Le dépôt contient désormais le code source. Les binaires sont publiés dans les Releases par GitHub Actions (CI + workflow de release).
