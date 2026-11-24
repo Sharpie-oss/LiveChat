@@ -14,6 +14,19 @@ public class VideoCacheTests
     public void GetExtension_IgnoresQueryString(string url, string expected) =>
         Assert.Equal(expected, VideoCache.GetExtension(url));
 
+    [Theory]
+    [InlineData("https://cdn.discordapp.com/attachments/1/2/clip.webm?ex=1&is=2&hm=3", ".mkv")] // Lu comme du Matroska.
+    [InlineData("https://cdn.discordapp.com/attachments/1/2/clip.MKV", ".mkv")]
+    [InlineData("https://cdn.discordapp.com/attachments/1/2/clip.mp4?ex=1", ".mp4")]
+    [InlineData("https://cdn.discordapp.com/attachments/1/2/clip.mov", ".mov")]
+    [InlineData(@"C:\Vidéos\clip.webm", ".mkv")]
+    public void GetPlaybackExtension_PlaysWebmAsMatroska(string url, string expected) =>
+        Assert.Equal(expected, VideoCache.GetPlaybackExtension(url));
+
+    [Fact]
+    public void CreateTempPath_UsesPlaybackExtension() =>
+        Assert.EndsWith(".mkv", VideoCache.CreateTempPath("https://cdn/a.webm?x=1"));
+
     [Fact]
     public void CreateTempPath_IsTemporaryAndUnique()
     {

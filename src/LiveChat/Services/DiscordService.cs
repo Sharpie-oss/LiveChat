@@ -180,6 +180,7 @@ public sealed class DiscordService : IAsyncDisposable
 
         client.Log += OnLog;
         client.Ready += () => OnReady(client);
+        client.Connected += () => OnConnected(client);
         client.Disconnected += ex => OnDisconnected(client, ex);
         client.MessageReceived += message => OnMessageReceived(client, message);
         client.MessageUpdated += (_, message, channel) => OnMessageUpdated(client, message, channel);
@@ -246,13 +247,40 @@ public sealed class DiscordService : IAsyncDisposable
             return Task.CompletedTask;
         }
 
+        if (UpdateChannelStatus(client) is { } guild && !_commandsRegistered)
+        {
+            // Hors du handler pour ne pas bloquer le gateway.
+            _ = Task.Run(() => RegisterCommandsAsync(client, guild));
+        }
+
+        return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Après une coupure réseau, Discord.Net reprend la session (RESUME) sans redéclencher Ready : sans ce gestionnaire,
+    /// le statut restait indéfiniment sur « Connexion perdue, reconnexion en cours… » alors que tout refonctionnait.
+    /// À la première connexion, le salon n'est pas encore en cache : Ready s'en charge.
+    /// </summary>
+    private Task OnConnected(DiscordSocketClient client)
+    {
+        if (IsCurrent(client) && client.GetChannel(_channelId) is not null)
+        {
+            UpdateChannelStatus(client);
+        }
+
+        return Task.CompletedTask;
+    }
+
+    /// <summary>Met à jour le statut d'après le salon surveillé ; renvoie son serveur s'il est valide.</summary>
+    private SocketGuild? UpdateChannelStatus(DiscordSocketClient client)
+    {
         switch (client.GetChannel(_channelId))
         {
             case null:
                 ChannelName = null;
                 SetStatus(ConnectionState.Warning,
                     $"Salon {_channelId} introuvable : vérifiez l'ID et que le bot a bien été invité sur le serveur.");
-                break;
+                return null;
 
             case SocketGuildChannel channel and IMessageChannel:
                 ChannelName = $"#{channel.Name} · {channel.Guild.Name}";
@@ -265,21 +293,13 @@ public sealed class DiscordService : IAsyncDisposable
                     SetStatus(ConnectionState.Connected, $"Connecté à {ChannelName}");
                 }
 
-                if (!_commandsRegistered)
-                {
-                    // Hors du handler pour ne pas bloquer le gateway.
-                    _ = Task.Run(() => RegisterCommandsAsync(client, channel.Guild));
-                }
-
-                break;
+                return channel.Guild;
 
             default:
                 ChannelName = null;
                 SetStatus(ConnectionState.Warning, "L'ID configuré ne correspond pas à un salon textuel de serveur.");
-                break;
+                return null;
         }
-
-        return Task.CompletedTask;
     }
 
     private Task OnDisconnected(DiscordSocketClient client, Exception? exception)

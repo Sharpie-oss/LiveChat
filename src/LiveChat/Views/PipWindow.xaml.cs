@@ -30,6 +30,13 @@ public partial class PipWindow : Window
     private static readonly TimeSpan FileCardDuration = TimeSpan.FromSeconds(4);
     private static readonly TimeSpan ErrorCardDuration = TimeSpan.FromSeconds(4);
 
+    /// <summary>
+    /// Volume maximal transmis au lecteur. Mesuré sur la sortie audio : avec exactement 1,0, le moteur de lecture
+    /// de WPF (Windows Media Player) ignore le volume pour toutes les vidéos après la première, jouées à 50 %.
+    /// 0,99 est inaudiblement différent de 100 %.
+    /// </summary>
+    private const double MaxPlayerVolume = 0.99;
+
     private enum PlaybackMode
     {
         None,
@@ -98,6 +105,8 @@ public partial class PipWindow : Window
     public bool IsPresenting => _current is not null;
 
     public WindowPlacement Placement => new(Left, Top, Width, Height);
+
+    private double PlayerVolume => Math.Min(_volume, MaxPlayerVolume);
 
     public void ApplySettings(AppSettings settings)
     {
@@ -204,7 +213,7 @@ public partial class PipWindow : Window
         _volume = Math.Clamp(Math.Round(volume, 2), 0, 1);
         if (_video is not null)
         {
-            _video.Volume = _volume;
+            _video.Volume = PlayerVolume;
         }
 
         UpdateVolumeUi();
@@ -389,7 +398,15 @@ public partial class PipWindow : Window
         var uri = new Uri(item.Url!, UriKind.Absolute);
         if (uri.IsFile)
         {
-            return uri.LocalPath;
+            if (VideoCache.GetPlaybackExtension(uri.LocalPath) == VideoCache.GetExtension(uri.LocalPath))
+            {
+                return uri.LocalPath;
+            }
+
+            // Fichier .webm local (option --preview) : copie temporaire avec l'extension lisible.
+            var copy = _tempVideoPath = VideoCache.CreateTempPath(uri.LocalPath);
+            await Task.Run(() => File.Copy(uri.LocalPath, copy), cancellationToken);
+            return copy;
         }
 
         var loading = CreateLoadingText();
@@ -432,7 +449,7 @@ public partial class PipWindow : Window
             LoadedBehavior = MediaState.Manual,
             UnloadedBehavior = MediaState.Close,
             Stretch = Stretch.Uniform,
-            Volume = _volume,
+            Volume = PlayerVolume,
             IsMuted = _looping, // Les GIF Tenor/Giphy n'ont pas de son.
             ScrubbingEnabled = false,
         };

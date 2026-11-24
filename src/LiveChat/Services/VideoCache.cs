@@ -17,11 +17,11 @@ public static class VideoCache
 
     public static string Directory { get; } = Path.Combine(Path.GetTempPath(), "LiveChat", "videos");
 
-    /// <summary>Nom de fichier temporaire unique, avec l'extension de l'URL (utile au lecteur pour choisir le décodeur).</summary>
+    /// <summary>Nom de fichier temporaire unique, avec l'extension de lecture (le lecteur choisit le décodeur d'après elle).</summary>
     public static string CreateTempPath(string url)
     {
         System.IO.Directory.CreateDirectory(Directory);
-        return Path.Combine(Directory, Guid.NewGuid().ToString("N") + GetExtension(url));
+        return Path.Combine(Directory, Guid.NewGuid().ToString("N") + GetPlaybackExtension(url));
     }
 
     /// <summary>Extension vidéo de l'URL (sans la query string) ; .mp4 par défaut.</summary>
@@ -30,6 +30,17 @@ public static class VideoCache
         var path = Uri.TryCreate(url, UriKind.Absolute, out var uri) ? uri.AbsolutePath : url;
         var extension = Path.GetExtension(path);
         return KnownExtensions.Contains(extension) ? extension.ToLowerInvariant() : ".mp4";
+    }
+
+    /// <summary>
+    /// Extension du fichier local à lire. Le lecteur de WPF (moteur de Windows Media Player) refuse les fichiers
+    /// .webm, même avec les « Extensions de vidéo web » du Microsoft Store (erreur 0xC00D0FEA). Le WebM est un
+    /// sous-ensemble du Matroska : nommé .mkv, le même fichier est lu par le lecteur Matroska de Windows (VP8, VP9, Opus).
+    /// </summary>
+    public static string GetPlaybackExtension(string url)
+    {
+        var extension = GetExtension(url);
+        return extension == ".webm" ? ".mkv" : extension;
     }
 
     /// <summary>Vrai pour un fichier créé par ce cache (jamais pour un fichier de l'utilisateur).</summary>

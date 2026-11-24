@@ -1,5 +1,20 @@
 # Changelog
 
+## 2.0.2 — Corrections issues des tests de bout en bout
+
+### Corrections de bugs
+
+- **WebM illisible** : le lecteur de WPF (moteur de Windows Media Player) refuse les fichiers `.webm`, même avec les extensions vidéo du Microsoft Store installées. Le WebM étant du Matroska, la vidéo téléchargée est maintenant enregistrée en `.mkv` et lue par le lecteur Matroska de Windows (VP8, VP9, son Opus).
+- **Volume à 100 %** : à partir de la deuxième vidéo, le volume réglé au maximum était ignoré et les vidéos étaient jouées à 50 %. Le volume transmis au lecteur est plafonné à 99 %, une différence inaudible.
+- **Statut après une coupure réseau** : quand Discord reprenait la session, l'indicateur restait sur « Connexion perdue, reconnexion en cours… » alors que tout refonctionnait.
+- **Nettoyage après une mise à jour** : au démarrage, tous les fichiers `*.old` du dossier de LiveChat *et de ses sous-dossiers* étaient supprimés, y compris ceux de l'utilisateur quand `LiveChat.exe` est lancé depuis Téléchargements ou le Bureau. Seules les sauvegardes créées par la mise à jour sont désormais supprimées.
+- **Fermeture pendant une mise à jour** : une fois l'exécutable remplacé, l'ancienne version ne pouvait plus charger ses dépendances (erreur sur `WpfAnimatedGif` dans le journal). Elles sont chargées avant le remplacement.
+
+### Technique
+
+- Les notes de release sont tirées de ce fichier (en français) : c'est ce texte qu'affiche la fenêtre de mise à jour, au lieu de la liste des pull requests générée par GitHub.
+- 8 nouveaux tests (97 au total).
+
 ## 2.0.1 — Lecture des vidéos
 
 ### Corrections de bugs

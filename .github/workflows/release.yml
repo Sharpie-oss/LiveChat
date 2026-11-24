@@ -51,7 +51,17 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          # Notes : section « ## X.Y.Z » de CHANGELOG.md, affichée telle quelle dans la fenêtre de mise à jour.
+          $version = $env:TAG.TrimStart('v')
+          $changelog = Get-Content CHANGELOG.md -Raw -Encoding utf8
+          $section = [regex]::Match($changelog, "(?ms)^## $([regex]::Escape($version))\b[^\r\n]*\r?\n(?<notes>.*?)(?=^## |\z)")
+          if ($section.Success) {
+            $section.Groups['notes'].Value.Trim() | Out-File -Encoding utf8 notes.md
+            $notes = @('--notes-file', 'notes.md')
+          } else {
+            $notes = @('--generate-notes')
+          }
           gh release create $env:TAG LiveChat-win-x64.zip LiveChat-win-x64.zip.sha256 `
             --target '${{ github.sha }}' `
             --title "LiveChat $env:TAG" `
-            --generate-notes
+            @notes

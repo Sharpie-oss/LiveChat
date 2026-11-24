@@ -71,7 +71,7 @@ LiveChat est **autonome** : un seul `LiveChat.exe` (Windows 10/11 64 bits), sans
 ## Formats pris en charge
 
 - **Images** : PNG, JPEG, BMP, TIFF, WebP (codec WebP de Windows), GIF animé.
-- **Vidéos** : MP4 (H.264), MOV, WMV, AVI. Le WebM et le MKV dépendent des codecs installés : les « Extensions de vidéo web » du Microsoft Store ajoutent le WebM. Une vidéo illisible est passée automatiquement.
+- **Vidéos** : MP4 (H.264), MOV, WebM (VP8, VP9), MKV, WMV, AVI. Le WebM utilise les décodeurs VP8/VP9 de Windows (« Extensions vidéo VP9 », généralement préinstallées sur Windows 10 et 11) ; l'AV1 et le HEVC demandent leur extension du Microsoft Store. Une vidéo illisible affiche la raison pendant 4 s, puis LiveChat passe au média suivant.
 - Les liens YouTube, Twitch, etc. ne sont pas lus : ce ne sont pas des fichiers vidéo.
 - La fenêtre reste au premier plan au-dessus des jeux en *plein écran fenêtré* (borderless). Les jeux en plein écran exclusif la masquent.
 
