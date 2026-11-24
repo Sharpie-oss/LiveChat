@@ -1,0 +1,56 @@
+<Window x:Class="LiveChat.Views.UpdateWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Mise à jour — LiveChat"
+        Width="460" SizeToContent="Height"
+        WindowStyle="None" AllowsTransparency="True" Background="Transparent"
+        ResizeMode="NoResize" WindowStartupLocation="CenterScreen" Topmost="True"
+        FontFamily="{StaticResource UiFont}" Foreground="{StaticResource TextBrush}"
+        Icon="/Assets/LiveChat.ico">
+    <Grid Margin="10">
+        <Border CornerRadius="12" Background="{StaticResource SurfaceAltBrush}">
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="18" ShadowDepth="0" Opacity="0.5" />
+            </Border.Effect>
+        </Border>
+        <Border CornerRadius="12" BorderBrush="{StaticResource SubtleBorderBrush}" BorderThickness="1" Padding="22,18"
+                MouseLeftButtonDown="Root_MouseLeftButtonDown" Background="Transparent">
+            <StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <Image Source="/Assets/LiveChat.png" Width="28" Height="28" Margin="0,0,12,0" />
+                    <TextBlock Text="Mise à jour disponible" FontSize="17" FontWeight="SemiBold" VerticalAlignment="Center" />
+                </StackPanel>
+
+                <TextBlock x:Name="VersionText" Margin="0,12,0,0" FontSize="13" TextWrapping="Wrap" />
+
+                <Border Margin="0,12,0,0" Background="{StaticResource InputBrush}" CornerRadius="8" Padding="12,10" MaxHeight="200">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <TextBlock x:Name="NotesText" FontSize="12" TextWrapping="Wrap" Foreground="{StaticResource MutedTextBrush}" />
+                    </ScrollViewer>
+                </Border>
+
+                <TextBlock Margin="0,8,0,0" FontSize="12">
+                    <Hyperlink x:Name="ReleaseLink" RequestNavigate="Hyperlink_RequestNavigate">Voir la version sur GitHub</Hyperlink>
+                </TextBlock>
+
+                <StackPanel x:Name="ProgressPanel" Margin="0,14,0,0" Visibility="Collapsed">
+                    <TextBlock x:Name="ProgressText" FontSize="12" Foreground="{StaticResource MutedTextBrush}" Margin="0,0,0,6" />
+                    <Grid Height="4">
+                        <Border CornerRadius="2" Background="{StaticResource InputHoverBrush}" />
+                        <Border x:Name="ProgressFill" CornerRadius="2" Background="{StaticResource AccentBrush}" HorizontalAlignment="Left" Width="0" />
+                    </Grid>
+                </StackPanel>
+
+                <TextBlock x:Name="ErrorText" Margin="0,12,0,0" Foreground="{StaticResource DangerBrush}" FontSize="12"
+                           TextWrapping="Wrap" Visibility="Collapsed" />
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,18,0,0">
+                    <Button x:Name="LaterButton" Content="Plus tard" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,10,0"
+                            Click="Later_Click" IsCancel="True" />
+                    <Button x:Name="InstallButton" Content="Installer et redémarrer" Style="{StaticResource PrimaryButtonStyle}"
+                            Click="Install_Click" IsDefault="True" />
+                </StackPanel>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>

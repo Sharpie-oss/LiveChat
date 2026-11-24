@@ -1,0 +1,144 @@
+<Window x:Class="LiveChat.Views.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:LiveChat.Controls"
+        Title="Paramètres — LiveChat"
+        Width="500" SizeToContent="Height" MinHeight="420"
+        WindowStyle="None" AllowsTransparency="True" Background="Transparent"
+        ResizeMode="NoResize" WindowStartupLocation="CenterScreen"
+        FontFamily="{StaticResource UiFont}" Foreground="{StaticResource TextBrush}"
+        Icon="/Assets/LiveChat.ico">
+    <Grid Margin="10">
+        <Border CornerRadius="12" Background="{StaticResource SurfaceAltBrush}">
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="18" ShadowDepth="0" Opacity="0.5" />
+            </Border.Effect>
+        </Border>
+
+        <Border CornerRadius="12" BorderBrush="{StaticResource SubtleBorderBrush}" BorderThickness="1">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <!-- En-tête -->
+                <Grid Background="Transparent" MouseLeftButtonDown="Header_MouseLeftButtonDown">
+                    <StackPanel Orientation="Horizontal" Margin="22,18,22,6">
+                        <Image Source="/Assets/LiveChat.png" Width="28" Height="28" Margin="0,0,12,0" VerticalAlignment="Center" />
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock x:Name="HeaderTitle" Text="Paramètres" FontSize="17" FontWeight="SemiBold" />
+                            <TextBlock x:Name="VersionText" FontSize="11.5" Foreground="{StaticResource MutedTextBrush}" />
+                        </StackPanel>
+                    </StackPanel>
+                    <Button Style="{StaticResource IconButtonStyle}" Content="&#xE8BB;" FontSize="10" HorizontalAlignment="Right"
+                            VerticalAlignment="Top" Margin="0,12,12,0" ToolTip="Fermer" Click="Cancel_Click" IsCancel="True" />
+                </Grid>
+
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="22,0,18,0">
+                    <StackPanel Margin="0,0,4,12">
+
+                        <TextBlock Text="CONNEXION DISCORD" Style="{StaticResource SectionTitleStyle}" />
+
+                        <TextBlock Text="Bot Token" Style="{StaticResource LabelStyle}" />
+                        <PasswordBox x:Name="TokenBox" />
+                        <TextBlock x:Name="TokenHint" Style="{StaticResource HintStyle}" />
+
+                        <TextBlock Text="Salon à surveiller" Style="{StaticResource LabelStyle}" />
+                        <TextBox x:Name="ChannelBox" />
+                        <TextBlock Style="{StaticResource HintStyle}">
+                            ID du salon ou lien du salon. Dans Discord, activez le mode développeur
+                            (Paramètres › Avancés) puis clic droit sur le salon › « Copier l'identifiant du salon ».
+                        </TextBlock>
+
+                        <Border Background="#1A5865F2" BorderBrush="#555865F2" BorderThickness="1" CornerRadius="8" Padding="12,10" Margin="0,2,0,0">
+                            <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="{StaticResource TextBrush}">
+                                Dans le <Hyperlink NavigateUri="https://discord.com/developers/applications" RequestNavigate="Hyperlink_RequestNavigate">portail développeur Discord</Hyperlink>,
+                                onglet <Bold>Bot</Bold>, activez <Bold>Message Content Intent</Bold>. Invitez le bot avec les scopes
+                                <Bold>bot</Bold> et <Bold>applications.commands</Bold> (permissions : voir le salon, lire l'historique).
+                            </TextBlock>
+                        </Border>
+
+                        <TextBlock Text="AFFICHAGE" Style="{StaticResource SectionTitleStyle}" />
+
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Right" Text="{Binding Value, ElementName=ImageDurationSlider, StringFormat={}{0:0} s}"
+                                       Foreground="{StaticResource MutedTextBrush}" />
+                            <TextBlock Text="Durée d'affichage des images et GIF" Style="{StaticResource LabelStyle}" />
+                        </DockPanel>
+                        <Slider x:Name="ImageDurationSlider" Minimum="2" Maximum="30" IsSnapToTickEnabled="True" TickFrequency="1" Margin="0,0,0,12" />
+
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Right" Text="{Binding Value, ElementName=VideoDurationSlider, StringFormat={}{0:0} s}"
+                                       Foreground="{StaticResource MutedTextBrush}" />
+                            <TextBlock Text="Durée maximale d'une vidéo" Style="{StaticResource LabelStyle}" />
+                        </DockPanel>
+                        <Slider x:Name="VideoDurationSlider" Minimum="5" Maximum="300" IsSnapToTickEnabled="True" TickFrequency="5" Margin="0,0,0,12" />
+
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Right" Text="{Binding Value, ElementName=VolumeSlider, StringFormat={}{0:0} %}"
+                                       Foreground="{StaticResource MutedTextBrush}" />
+                            <TextBlock Text="Volume des vidéos" Style="{StaticResource LabelStyle}" />
+                        </DockPanel>
+                        <Slider x:Name="VolumeSlider" Minimum="0" Maximum="100" IsSnapToTickEnabled="True" TickFrequency="1" Margin="0,0,0,12" />
+
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Right" Text="{Binding Value, ElementName=QueueSlider, StringFormat={}{0:0}}"
+                                       Foreground="{StaticResource MutedTextBrush}" />
+                            <TextBlock Text="Médias maximum en file d'attente" Style="{StaticResource LabelStyle}" />
+                        </DockPanel>
+                        <Slider x:Name="QueueSlider" Minimum="1" Maximum="50" IsSnapToTickEnabled="True" TickFrequency="1" Margin="0,0,0,8" />
+
+                        <CheckBox x:Name="ShowMessageTextBox" Content="Afficher le texte du message en légende" />
+                        <CheckBox x:Name="ShowTextOnlyBox" Content="Afficher aussi les messages sans média" />
+                        <CheckBox x:Name="BlurSpoilersBox" Content="Flouter les médias marqués spoiler (clic pour dévoiler)" />
+                        <CheckBox x:Name="KeepVisibleBox" Content="Garder la fenêtre visible même sans média" />
+
+                        <TextBlock Text="RACCOURCIS GLOBAUX" Style="{StaticResource SectionTitleStyle}" />
+                        <TextBlock Style="{StaticResource HintStyle}" Margin="0,-4,0,10">
+                            Ils fonctionnent même quand LiveChat n'a pas le focus (en jeu, pendant un stream…).
+                        </TextBlock>
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="14" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="STOP (vide la file)" Style="{StaticResource LabelStyle}" />
+                                <controls:HotkeyBox x:Name="StopHotkeyBox" Style="{StaticResource TextInputStyle}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="Passer au suivant" Style="{StaticResource LabelStyle}" />
+                                <controls:HotkeyBox x:Name="SkipHotkeyBox" Style="{StaticResource TextInputStyle}" />
+                            </StackPanel>
+                        </Grid>
+
+                        <TextBlock Text="GÉNÉRAL" Style="{StaticResource SectionTitleStyle}" />
+                        <CheckBox x:Name="StartWithWindowsBox" Content="Lancer LiveChat au démarrage de Windows" />
+                        <CheckBox x:Name="CheckUpdatesBox" Content="Rechercher les mises à jour au démarrage" />
+                    </StackPanel>
+                </ScrollViewer>
+
+                <!-- Pied -->
+                <Border Grid.Row="2" BorderBrush="{StaticResource SubtleBorderBrush}" BorderThickness="0,1,0,0" Padding="22,14">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock x:Name="ErrorText" Foreground="{StaticResource DangerBrush}" FontSize="12" TextWrapping="Wrap"
+                                   VerticalAlignment="Center" Margin="0,0,12,0" Visibility="Collapsed" />
+                        <StackPanel Grid.Column="1" Orientation="Horizontal">
+                            <Button x:Name="CancelButton" Content="Annuler" Style="{StaticResource SecondaryButtonStyle}"
+                                    Margin="0,0,10,0" Click="Cancel_Click" />
+                            <Button Content="Enregistrer" Style="{StaticResource PrimaryButtonStyle}" IsDefault="True" Click="Save_Click" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

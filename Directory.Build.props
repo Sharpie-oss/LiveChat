@@ -1,0 +1,11 @@
+<Project>
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Deterministic>true</Deterministic>
+    <Authors>Sharpie-oss</Authors>
+    <Product>LiveChat</Product>
+    <RepositoryUrl>https://github.com/Sharpie-oss/LiveChat</RepositoryUrl>
+  </PropertyGroup>
+</Project>
