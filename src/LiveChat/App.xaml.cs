@@ -1,4 +1,6 @@
 using System.Diagnostics;
+using System.Security.Cryptography;
+using System.Text;
 using System.Windows;
 using System.Windows.Threading;
 using LiveChat.Configuration;
@@ -17,6 +19,11 @@ namespace LiveChat;
 public partial class App : Application
 {
     private const string InstanceId = "LiveChat-8B1F6C2E-4D7A-4C55-9E0B-2F3A6D9C1E47";
+
+    /// <summary>Un dossier de données distinct (LIVECHAT_DATA_DIR) correspond à une instance distincte.</summary>
+    private static readonly string InstanceKey = AppPaths.IsDataDirectoryOverridden
+        ? $"{InstanceId}-{Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(AppPaths.DataDirectory.ToUpperInvariant())))[..16]}"
+        : InstanceId;
 
     private readonly UpdateService _updates = new();
     private readonly DispatcherTimer _saveTimer = new() { Interval = TimeSpan.FromMilliseconds(800) };
@@ -53,6 +60,7 @@ public partial class App : Application
 
         Log.Info($"LiveChat {UpdateService.CurrentVersion.ToString(3)} démarré ({AppPaths.AppDirectory}).");
         UpdateService.CleanupPreviousUpdate();
+        VideoCache.CleanupStaleFiles();
 
         _store = new SettingsStore(AppPaths.SettingsFile, AppPaths.LegacyConfigFile);
         _settings = _store.Load();
@@ -459,7 +467,7 @@ public partial class App : Application
 
     private bool AcquireSingleInstance(bool waitForPreviousInstance)
     {
-        _instanceMutex = new Mutex(false, $@"Local\{InstanceId}");
+        _instanceMutex = new Mutex(false, $@"Local\{InstanceKey}");
         bool acquired;
         try
         {
@@ -477,7 +485,7 @@ public partial class App : Application
             _instanceMutex = null;
 
             // Demande à l'instance déjà lancée d'afficher sa fenêtre.
-            if (EventWaitHandle.TryOpenExisting($@"Local\{InstanceId}-activate", out var existing))
+            if (EventWaitHandle.TryOpenExisting($@"Local\{InstanceKey}-activate", out var existing))
             {
                 existing.Set();
                 existing.Dispose();
@@ -486,7 +494,7 @@ public partial class App : Application
             return false;
         }
 
-        _activationEvent = new EventWaitHandle(false, EventResetMode.AutoReset, $@"Local\{InstanceId}-activate");
+        _activationEvent = new EventWaitHandle(false, EventResetMode.AutoReset, $@"Local\{InstanceKey}-activate");
         _activationWait = ThreadPool.RegisterWaitForSingleObject(_activationEvent, (_, _) =>
             Dispatcher.InvokeAsync(() =>
             {

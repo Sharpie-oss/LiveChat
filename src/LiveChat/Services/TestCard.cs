@@ -72,9 +72,10 @@ public static class TestCard
             return null;
         }
 
-        var kind = MessageParser.Classify(null, uri?.IsFile == false ? uri.AbsolutePath : pathOrUrl);
+        var path = uri is { IsFile: false } ? uri.AbsolutePath : pathOrUrl; // Sans la query string.
+        var kind = MessageParser.Classify(null, path);
         return kind == MediaKind.File
             ? null
-            : new MediaItem(kind, "Aperçu") { Url = url, Caption = Path.GetFileName(pathOrUrl) };
+            : new MediaItem(kind, "Aperçu") { Url = url, Caption = Path.GetFileName(path) };
     }
 }

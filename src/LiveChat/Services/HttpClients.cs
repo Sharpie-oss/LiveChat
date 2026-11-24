@@ -29,29 +29,71 @@ public static class HttpClients
             throw new NotSupportedException($"Schéma d'URL non pris en charge : {uri.Scheme}");
         }
 
+        using var buffer = new MemoryStream();
+        await DownloadAsync(uri, buffer, maxBytes, progress: null, cancellationToken);
+        return buffer.ToArray();
+    }
+
+    /// <summary>
+    /// Télécharge un fichier sur disque, avec progression (0 à 1) et taille maximale.
+    /// En cas d'erreur ou d'annulation, le fichier partiel est supprimé.
+    /// </summary>
+    public static async Task DownloadToFileAsync(string url, string destination, long maxBytes, IProgress<double>? progress, CancellationToken cancellationToken)
+    {
+        var uri = new Uri(url, UriKind.Absolute);
+        if (uri.Scheme != Uri.UriSchemeHttps && uri.Scheme != Uri.UriSchemeHttp)
+        {
+            throw new NotSupportedException($"Schéma d'URL non pris en charge : {uri.Scheme}");
+        }
+
+        try
+        {
+            await using var file = new FileStream(destination, FileMode.Create, FileAccess.Write, FileShare.None, 81920, useAsync: true);
+            await DownloadAsync(uri, file, maxBytes, progress, cancellationToken);
+        }
+        catch
+        {
+            try
+            {
+                File.Delete(destination);
+            }
+            catch (IOException)
+            {
+            }
+
+            throw;
+        }
+    }
+
+    private static async Task DownloadAsync(Uri uri, Stream destination, long maxBytes, IProgress<double>? progress, CancellationToken cancellationToken)
+    {
         using var response = await Shared.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
         response.EnsureSuccessStatusCode();
 
-        if (response.Content.Headers.ContentLength > maxBytes)
+        var total = response.Content.Headers.ContentLength;
+        if (total > maxBytes)
         {
-            throw new InvalidDataException("Fichier trop volumineux.");
+            throw new InvalidDataException($"Fichier trop volumineux ({total / 1024 / 1024} Mo).");
         }
 
         await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
-        using var buffer = new MemoryStream();
         var chunk = new byte[81920];
+        long received = 0;
         int read;
         while ((read = await stream.ReadAsync(chunk, cancellationToken)) > 0)
         {
-            if (buffer.Length + read > maxBytes)
+            received += read;
+            if (received > maxBytes)
             {
                 throw new InvalidDataException("Fichier trop volumineux.");
             }
 
-            buffer.Write(chunk, 0, read);
+            await destination.WriteAsync(chunk.AsMemory(0, read), cancellationToken);
+            if (total > 0)
+            {
+                progress?.Report((double)received / total.Value);
+            }
         }
-
-        return buffer.ToArray();
     }
 
     private static HttpClient Create()

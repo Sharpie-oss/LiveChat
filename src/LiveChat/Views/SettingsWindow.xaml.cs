@@ -70,6 +70,12 @@ public partial class SettingsWindow : Window
         {
             token = _original.BotToken;
         }
+        else if (!SettingsValidation.IsBotTokenFormat(token))
+        {
+            ShowError("Ce n'est pas un Bot Token : copiez-le dans l'onglet « Bot » (bouton Reset Token), pas le Client Secret de l'onglet OAuth2.");
+            TokenBox.Focus();
+            return;
+        }
 
         if (string.IsNullOrWhiteSpace(token))
         {

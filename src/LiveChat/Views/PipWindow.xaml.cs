@@ -46,6 +46,7 @@ public partial class PipWindow : Window
     private DateTime _startedAt;
     private TimeSpan _duration;
     private MediaElement? _video;
+    private string? _tempVideoPath;
     private DateTime? _videoOpenedAt;
     private bool _looping;
     private CancellationTokenSource? _loadCts;
@@ -305,7 +306,20 @@ public partial class PipWindow : Window
 
                 case MediaKind.Video:
                 case MediaKind.LoopingVideo:
-                    StartVideo(item, id);
+                    var videoCts = _loadCts = new CancellationTokenSource();
+                    var source = await PrepareVideoAsync(item, id, videoCts.Token);
+                    if (id != _presentationId)
+                    {
+                        // Passé pendant le téléchargement : on ne garde pas le fichier temporaire.
+                        if (VideoCache.IsTemporary(source))
+                        {
+                            VideoCache.TryDelete(source);
+                        }
+
+                        return;
+                    }
+
+                    StartVideo(item, id, source);
                     break;
 
                 case MediaKind.Text:
@@ -339,7 +353,49 @@ public partial class PipWindow : Window
         _ticker.Start();
     }
 
-    private void StartVideo(MediaItem item, int id)
+    /// <summary>
+    /// Renvoie le fichier local à lire : les vidéos distantes sont d'abord téléchargées (voir <see cref="VideoCache"/>),
+    /// avec un indicateur de chargement et la progression du téléchargement.
+    /// </summary>
+    private async Task<string> PrepareVideoAsync(MediaItem item, int id, CancellationToken cancellationToken)
+    {
+        var uri = new Uri(item.Url!, UriKind.Absolute);
+        if (uri.IsFile)
+        {
+            return uri.LocalPath;
+        }
+
+        var loading = CreateLoadingText();
+        MediaHost.Children.Add(loading);
+        SetProgress(0, visible: true);
+
+        var path = VideoCache.CreateTempPath(item.Url!);
+        _tempVideoPath = path;
+        var progress = new Progress<double>(value =>
+        {
+            if (id == _presentationId)
+            {
+                SetProgress(value, visible: true);
+                loading.Text = $"Chargement de la vidéo… {value:P0}";
+            }
+        });
+
+        await HttpClients.DownloadToFileAsync(item.Url!, path, VideoCache.MaxVideoBytes, progress, cancellationToken);
+        MediaHost.Children.Remove(loading);
+        return path;
+    }
+
+    private TextBlock CreateLoadingText() => new()
+    {
+        Text = "Chargement de la vidéo…",
+        FontSize = 13,
+        HorizontalAlignment = HorizontalAlignment.Center,
+        VerticalAlignment = VerticalAlignment.Center,
+        Margin = new Thickness(24),
+        Foreground = (Brush)FindResource("MutedTextBrush"),
+    };
+
+    private void StartVideo(MediaItem item, int id, string localPath)
     {
         _looping = item.Kind == MediaKind.LoopingVideo;
         _videoOpenedAt = null;
@@ -379,7 +435,7 @@ public partial class PipWindow : Window
         };
 
         ApplySpoiler(video, item);
-        video.Source = new Uri(item.Url!, UriKind.Absolute);
+        video.Source = new Uri(localPath, UriKind.Absolute);
         _video = video;
         MediaHost.Children.Add(video);
 
@@ -503,6 +559,12 @@ public partial class PipWindow : Window
             _video = null;
         }
 
+        if (_tempVideoPath is { } tempVideo)
+        {
+            _tempVideoPath = null;
+            _ = DeleteTempVideoAsync(tempVideo);
+        }
+
         foreach (var image in MediaHost.Children.OfType<Image>())
         {
             ImageBehavior.SetAnimatedSource(image, null);
@@ -512,6 +574,20 @@ public partial class PipWindow : Window
         CaptionBorder.Visibility = Visibility.Collapsed;
         SpoilerBadge.Visibility = Visibility.Collapsed;
         SetProgress(0, visible: false);
+    }
+
+    /// <summary>Le lecteur libère le fichier de façon asynchrone : on réessaie quelques secondes plus tard.</summary>
+    private static async Task DeleteTempVideoAsync(string path)
+    {
+        for (var attempt = 0; attempt < 5; attempt++)
+        {
+            if (VideoCache.TryDelete(path))
+            {
+                return;
+            }
+
+            await Task.Delay(TimeSpan.FromSeconds(2));
+        }
     }
 
     private void EnterIdle()
