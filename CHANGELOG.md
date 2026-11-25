@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.0.3 — Mise à jour depuis la 2.0.1
+
+### Corrections de bugs
+
+- **Mise à jour bloquée depuis la 2.0.1** : après « Installer et redémarrer », l'ancienne version restait bloquée pendant sa fermeture, car elle chargeait une dépendance dans son exécutable déjà remplacé. La nouvelle version abandonnait au bout de 15 s et il fallait arrêter LiveChat dans le Gestionnaire des tâches. Désormais, la nouvelle version arrête l'ancienne instance du même dossier, retire son icône de notification, puis démarre. Depuis la 2.0.1, la mise à jour prend donc une quinzaine de secondes.
+
+### Améliorations
+
+- **Fenêtre de mise à jour** : les notes de version sont mises en forme (titres, puces) au lieu d'afficher le Markdown brut.
+- 1 nouveau test (112 au total).
+
 ## 2.0.2 — Corrections et nouveautés issues des tests de bout en bout
 
 ### Nouveautés
