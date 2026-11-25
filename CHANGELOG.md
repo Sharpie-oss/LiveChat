@@ -21,7 +21,7 @@
 ### Technique
 
 - GitHub Actions : `actions/checkout@v7` et `actions/setup-dotnet@v6`, car Node.js 20 est déprécié.
-- 18 nouveaux tests (130 au total).
+- 19 nouveaux tests (131 au total), dont un test de robustesse du décodeur APNG sur 300 fichiers corrompus.
 
 ## 2.0.3 — Mise à jour depuis la 2.0.1
 

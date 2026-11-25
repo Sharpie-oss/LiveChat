@@ -38,8 +38,23 @@ public static class Apng
         return false;
     }
 
-    /// <summary>Images composées de l'animation, ou null si ce n'est pas un APNG exploitable.</summary>
+    /// <summary>
+    /// Images composées de l'animation, ou null si ce n'est pas un APNG exploitable. Ne lève jamais d'exception :
+    /// un fichier abîmé ou inattendu retombe sur l'affichage de l'image fixe.
+    /// </summary>
     public static IReadOnlyList<AnimationFrame>? Decode(byte[] data)
+    {
+        try
+        {
+            return DecodeCore(data);
+        }
+        catch (Exception ex) when (ex is not OutOfMemoryException)
+        {
+            return null;
+        }
+    }
+
+    private static IReadOnlyList<AnimationFrame>? DecodeCore(byte[] data)
     {
         byte[]? header = null;
         var sharedChunks = new List<Chunk>();
@@ -79,7 +94,7 @@ public static class Apng
             }
         }
 
-        if (!animated || header is null || frames.Count < 2 || frames.Any(f => f.Data.Count == 0))
+        if (!animated || header is not { Length: 13 } || frames.Count < 2 || frames.Any(f => f.Data.Count == 0))
         {
             return null;
         }

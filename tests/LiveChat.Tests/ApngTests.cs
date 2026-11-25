@@ -124,6 +124,28 @@ public class ApngTests
     }
 
     [Fact]
+    public void Decode_NeverThrowsOnCorruptedFiles()
+    {
+        var reference = BuildApng(8, 8,
+            new TestFrame(8, 8, 0, 0, Red, 100),
+            new TestFrame(4, 4, 2, 2, Green, 100, Dispose: 2, Blend: 1),
+            new TestFrame(8, 8, 0, 0, Blue, 100, Dispose: 1));
+        var random = new Random(42);
+
+        for (var attempt = 0; attempt < 300; attempt++)
+        {
+            var corrupted = (byte[])reference.Clone();
+            for (var i = 0; i < 1 + attempt % 4; i++)
+            {
+                corrupted[random.Next(8, corrupted.Length)] = (byte)random.Next(256);
+            }
+
+            var error = Record.Exception(() => Apng.Decode(corrupted));
+            Assert.Null(error); // Au pire null : l'image fixe sera affichée à la place.
+        }
+    }
+
+    [Fact]
     public void Decode_StillPng_IsNotAnimated()
     {
         var encoder = new PngBitmapEncoder();
