@@ -9,6 +9,8 @@ public class VideoCacheTests
     [InlineData("https://cdn.discordapp.com/attachments/1/2/clip.mp4?ex=6b075190&is=6b060010&hm=abc&", ".mp4")]
     [InlineData("https://cdn.discordapp.com/attachments/1/2/CLIP.MOV?ex=1", ".mov")]
     [InlineData("https://media.tenor.com/abc/AAPo/funny.webm", ".webm")]
+    [InlineData("https://cdn.discordapp.com/attachments/1/2/son.MP3?ex=1", ".mp3")]
+    [InlineData("https://cdn.discordapp.com/attachments/1/2/voice-message.ogg?ex=1", ".ogg")]
     [InlineData("https://example.com/stream?id=42", ".mp4")]
     [InlineData("https://example.com/page.html", ".mp4")]
     public void GetExtension_IgnoresQueryString(string url, string expected) =>

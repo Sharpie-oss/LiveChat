@@ -6,7 +6,8 @@ namespace LiveChat.Services;
 /// <param name="ShowMessageText">Utiliser le texte du message comme légende du premier média.</param>
 /// <param name="ShowTextOnlyMessages">Afficher aussi les messages sans média.</param>
 /// <param name="BlurSpoilers">Flouter les médias spoiler et masquer le texte entre ||barres||.</param>
-public sealed record ParserOptions(bool ShowMessageText, bool ShowTextOnlyMessages, bool BlurSpoilers);
+/// <param name="PlayAudio">Lire les sons et messages vocaux (sinon : simple carte avec le nom du fichier).</param>
+public sealed record ParserOptions(bool ShowMessageText, bool ShowTextOnlyMessages, bool BlurSpoilers, bool PlayAudio = true);
 
 /// <summary>Transforme un message Discord en éléments affichables.</summary>
 public static partial class MessageParser
@@ -24,6 +25,11 @@ public static partial class MessageParser
         ".mp4", ".m4v", ".mov", ".webm", ".mkv", ".avi", ".wmv", ".flv",
     };
 
+    private static readonly HashSet<string> AudioExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".mp3", ".wav", ".m4a", ".aac", ".flac", ".wma", ".ogg", ".oga", ".opus",
+    };
+
     public static IReadOnlyList<MediaItem> Parse(IncomingMessage message, ParserOptions options)
     {
         var items = new List<MediaItem>();
@@ -34,7 +40,13 @@ public static partial class MessageParser
         {
             foreach (var attachment in message.Attachments)
             {
-                items.Add(new MediaItem(Classify(attachment.ContentType, attachment.FileName), message.Author)
+                var kind = Classify(attachment.ContentType, attachment.FileName);
+                if (kind == MediaKind.Audio && !options.PlayAudio)
+                {
+                    kind = MediaKind.File;
+                }
+
+                items.Add(new MediaItem(kind, message.Author)
                 {
                     Url = attachment.Url,
                     FileName = attachment.FileName,
@@ -141,6 +153,11 @@ public static partial class MessageParser
         if (mime.StartsWith("video/", StringComparison.OrdinalIgnoreCase) || VideoExtensions.Contains(extension))
         {
             return MediaKind.Video;
+        }
+
+        if (mime.StartsWith("audio/", StringComparison.OrdinalIgnoreCase) || AudioExtensions.Contains(extension))
+        {
+            return MediaKind.Audio;
         }
 
         return MediaKind.File;

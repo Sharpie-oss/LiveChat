@@ -21,6 +21,10 @@ public class MessageParserTests
     [InlineData(null, "anim.gif", MediaKind.AnimatedImage)]
     [InlineData("video/mp4", "clip.mp4", MediaKind.Video)]
     [InlineData(null, "clip.webm", MediaKind.Video)]
+    [InlineData("audio/mpeg", "son.mp3", MediaKind.Audio)]
+    [InlineData("audio/ogg", "voice-message.ogg", MediaKind.Audio)] // Message vocal Discord.
+    [InlineData(null, "bruit.WAV", MediaKind.Audio)]
+    [InlineData("video/ogg", "clip.ogg", MediaKind.Video)] // Le type MIME prime sur l'extension.
     [InlineData("application/pdf", "doc.pdf", MediaKind.File)]
     [InlineData(null, "archive", MediaKind.File)]
     public void Classify_UsesMimeTypeThenExtension(string? contentType, string fileName, MediaKind expected) =>
@@ -68,6 +72,15 @@ public class MessageParserTests
         // Permet de les retirer si le message est supprimé sur Discord.
         Assert.All(MessageParser.Parse(Message("x", [new AttachmentInfo("https://cdn/a.png", "a.png", "image/png"),
             new AttachmentInfo("https://cdn/b.png", "b.png", "image/png")]), Defaults), i => Assert.Equal(1UL, i.MessageId));
+
+    [Fact]
+    public void Parse_Audio_PlaysUnlessDisabled()
+    {
+        var message = Message(attachments: [new AttachmentInfo("https://cdn/voice-message.ogg", "voice-message.ogg", "audio/ogg")]);
+
+        Assert.Equal(MediaKind.Audio, Assert.Single(MessageParser.Parse(message, Defaults)).Kind);
+        Assert.Equal(MediaKind.File, Assert.Single(MessageParser.Parse(message, Defaults with { PlayAudio = false })).Kind);
+    }
 
     [Fact]
     public void Parse_CaptionDisabled_NoCaption()

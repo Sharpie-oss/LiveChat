@@ -81,6 +81,7 @@ public static class TestCard
             {
                 Url = url,
                 Caption = fileName,
+                FileName = fileName,
 
                 // Même convention que Discord : « SPOILER_photo.png » s'affiche flouté.
                 IsSpoiler = new AttachmentInfo(url, fileName, null).IsSpoiler,

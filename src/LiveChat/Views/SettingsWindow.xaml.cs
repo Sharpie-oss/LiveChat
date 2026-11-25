@@ -48,6 +48,7 @@ public partial class SettingsWindow : Window
         ShowMessageTextBox.IsChecked = current.ShowMessageText;
         ShowTextOnlyBox.IsChecked = current.ShowTextOnlyMessages;
         BlurSpoilersBox.IsChecked = current.BlurSpoilers;
+        PlayAudioBox.IsChecked = current.PlayAudio;
         KeepVisibleBox.IsChecked = current.KeepWindowVisible;
         StartWithWindowsBox.IsChecked = current.StartWithWindows;
         CheckUpdatesBox.IsChecked = current.CheckForUpdates;
@@ -119,6 +120,7 @@ public partial class SettingsWindow : Window
         settings.ShowMessageText = ShowMessageTextBox.IsChecked == true;
         settings.ShowTextOnlyMessages = ShowTextOnlyBox.IsChecked == true;
         settings.BlurSpoilers = BlurSpoilersBox.IsChecked == true;
+        settings.PlayAudio = PlayAudioBox.IsChecked == true;
         settings.KeepWindowVisible = KeepVisibleBox.IsChecked == true;
         settings.StartWithWindows = StartWithWindowsBox.IsChecked == true;
         settings.CheckForUpdates = CheckUpdatesBox.IsChecked == true;

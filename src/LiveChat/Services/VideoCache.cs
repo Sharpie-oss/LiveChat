@@ -13,6 +13,7 @@ public static class VideoCache
     private static readonly HashSet<string> KnownExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
         ".mp4", ".m4v", ".mov", ".webm", ".mkv", ".avi", ".wmv", ".flv",
+        ".mp3", ".wav", ".m4a", ".aac", ".flac", ".wma", ".ogg", ".oga", ".opus",
     };
 
     public static string Directory { get; } = Path.Combine(Path.GetTempPath(), "LiveChat", "videos");

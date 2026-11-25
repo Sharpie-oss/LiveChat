@@ -49,6 +49,9 @@ public sealed class AppSettings
     /// <summary>Floute les médias marqués « spoiler ».</summary>
     public bool BlurSpoilers { get; set; } = true;
 
+    /// <summary>Lit les sons et messages vocaux envoyés dans le salon.</summary>
+    public bool PlayAudio { get; set; } = true;
+
     public bool CheckForUpdates { get; set; } = true;
 
     public bool StartWithWindows { get; set; }

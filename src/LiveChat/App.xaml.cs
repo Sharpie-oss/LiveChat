@@ -263,7 +263,7 @@ public partial class App : Application
             return;
         }
 
-        var options = new ParserOptions(_settings.ShowMessageText, _settings.ShowTextOnlyMessages, _settings.BlurSpoilers);
+        var options = new ParserOptions(_settings.ShowMessageText, _settings.ShowTextOnlyMessages, _settings.BlurSpoilers, _settings.PlayAudio);
         var items = MessageParser.Parse(message, options);
         if (MessageParser.Describe(message, items) is { } summary)
         {

@@ -1,5 +1,19 @@
 # Changelog
 
+## 2.2.0 — Sons, messages vocaux et WebP animés
+
+### Nouveautés
+
+- **Sons** : les fichiers audio (MP3, WAV, M4A, AAC, FLAC, WMA) sont lus avec le volume de LiveChat, sur une carte qui affiche leur nom et une barre de progression. Avant, ils n'apparaissaient que sous forme de carte « fichier », sans son.
+- **Messages vocaux Discord** : ils sont au format Ogg Opus, que le lecteur de Windows refuse. LiveChat convertit le conteneur Ogg en Matroska, sans réencoder le son, puis le lit sur une carte « Message vocal ». Les fichiers Ogg Vorbis restent non pris en charge.
+- **WebP animés** : ils s'animent au lieu de rester figés, grâce au codec WebP de Windows.
+- **Nouvelle option** « Lire les sons et les messages vocaux » (activée par défaut). Une fois désactivée, un son s'affiche comme un simple fichier, sans être lu.
+
+### Technique
+
+- La durée maximale d'une vidéo s'applique aussi aux sons.
+- 18 nouveaux tests (149 au total).
+
 ## 2.1.0 — Stickers animés, modération, « Rejouer » et diagnostics
 
 ### Nouveautés
