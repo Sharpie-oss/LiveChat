@@ -25,8 +25,12 @@ public partial class App : Application
         ? $"{InstanceId}-{Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(AppPaths.DataDirectory.ToUpperInvariant())))[..16]}"
         : InstanceId;
 
+    /// <summary>LiveChat reste souvent ouvert des jours entiers (démarrage avec Windows) : on revérifie régulièrement.</summary>
+    private static readonly TimeSpan UpdateCheckInterval = TimeSpan.FromHours(6);
+
     private readonly UpdateService _updates = new();
     private readonly DispatcherTimer _saveTimer = new() { Interval = TimeSpan.FromMilliseconds(800) };
+    private readonly DispatcherTimer _updateTimer = new() { Interval = UpdateCheckInterval };
 
     private Mutex? _instanceMutex;
     private EventWaitHandle? _activationEvent;
@@ -101,6 +105,15 @@ public partial class App : Application
         {
             _ = CheckForUpdatesAsync(interactive: false, delay: TimeSpan.FromSeconds(5));
         }
+
+        _updateTimer.Tick += (_, _) =>
+        {
+            if (_settings.CheckForUpdates)
+            {
+                _ = CheckForUpdatesAsync(interactive: false, delay: TimeSpan.Zero);
+            }
+        };
+        _updateTimer.Start();
     }
 
     protected override void OnExit(ExitEventArgs e)
@@ -382,8 +395,15 @@ public partial class App : Application
                 return;
             }
 
+            // Vérification périodique : on ne renotifie pas une version déjà signalée.
+            var alreadyNotified = _pendingUpdate?.Version == update.Version;
             _pendingUpdate = update;
             _tray.SetUpdateAvailable(update.Version.ToString(3));
+            if (alreadyNotified && !interactive)
+            {
+                return;
+            }
+
             Log.Info($"Mise à jour disponible : {update.TagName}.");
 
             if (interactive)
@@ -437,6 +457,7 @@ public partial class App : Application
         }
 
         _exiting = true;
+        _updateTimer.Stop();
         if (_pip is not null)
         {
             if (_settings is not null)

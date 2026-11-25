@@ -166,6 +166,39 @@ public class MessageParserTests
     }
 
     [Fact]
+    public void Parse_Stickers_AreShownAsImages()
+    {
+        var message = Message() with
+        {
+            Stickers =
+            [
+                new StickerInfo("https://media.discordapp.net/stickers/1.png", "Coucou", IsAnimated: false),
+                new StickerInfo("https://media.discordapp.net/stickers/2.gif", "Danse", IsAnimated: true),
+            ],
+        };
+
+        var items = MessageParser.Parse(message, Defaults);
+
+        Assert.Equal(2, items.Count);
+        Assert.Equal(MediaKind.Image, items[0].Kind);
+        Assert.Equal("https://media.discordapp.net/stickers/1.png", items[0].Url);
+        Assert.Equal(MediaKind.AnimatedImage, items[1].Kind);
+        Assert.All(items, i => Assert.Equal("Alice", i.Author));
+    }
+
+    [Fact]
+    public void Parse_EmbedsOnlyUpdate_IgnoresStickers()
+    {
+        var message = Message() with
+        {
+            EmbedsOnly = true,
+            Stickers = [new StickerInfo("https://media.discordapp.net/stickers/1.png", "Coucou", IsAnimated: false)],
+        };
+
+        Assert.Empty(MessageParser.Parse(message, Defaults));
+    }
+
+    [Fact]
     public void Parse_ExplicitCaption_IsAlwaysShown()
     {
         var message = Message("Ma légende", [new AttachmentInfo("https://cdn/a.mp4", "a.mp4", "video/mp4")]) with { IsExplicitCaption = true };

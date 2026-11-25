@@ -42,6 +42,16 @@ public static partial class MessageParser
                     IsSpoiler = options.BlurSpoilers && attachment.IsSpoiler,
                 });
             }
+
+            foreach (var sticker in message.Stickers)
+            {
+                items.Add(new MediaItem(sticker.IsAnimated ? MediaKind.AnimatedImage : MediaKind.Image, message.Author)
+                {
+                    Url = sticker.Url,
+                    FileName = sticker.Name,
+                    AvatarUrl = message.AvatarUrl,
+                });
+            }
         }
 
         foreach (var embed in message.Embeds)

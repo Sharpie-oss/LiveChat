@@ -63,6 +63,7 @@ public partial class PipWindow : Window
     private bool _keepVisible;
     private bool _paused;
     private bool _updatingVolumeUi;
+    private bool _updatingPin;
     private TimeSpan _imageDuration = TimeSpan.FromSeconds(6);
     private TimeSpan _maxVideoDuration = TimeSpan.FromSeconds(60);
     private ConnectionStatus _status = new(ConnectionState.Disconnected, "Non connecté");
@@ -226,7 +227,9 @@ public partial class PipWindow : Window
     public void SetKeepVisible(bool keepVisible, bool raiseEvent)
     {
         _keepVisible = keepVisible;
+        _updatingPin = true;
         PinToggle.IsChecked = keepVisible;
+        _updatingPin = false;
         PinToggle.Content = keepVisible ? "" : "";
 
         if (keepVisible)
@@ -304,14 +307,14 @@ public partial class PipWindow : Window
                 case MediaKind.Image:
                 case MediaKind.AnimatedImage:
                     var cts = _loadCts = new CancellationTokenSource();
-                    var image = await CreateImageAsync(item, cts.Token);
+                    var (image, animationLength) = await CreateImageAsync(item, cts.Token);
                     if (id != _presentationId)
                     {
                         return;
                     }
 
                     MediaHost.Children.Add(image);
-                    StartTimed(_imageDuration);
+                    StartTimed(DisplayDuration(animationLength));
                     break;
 
                 case MediaKind.Video:
@@ -349,9 +352,15 @@ public partial class PipWindow : Window
             if (id == _presentationId)
             {
                 Log.Warn($"Affichage impossible de {item.Url ?? item.Kind.ToString()}.", ex);
-                ShowError(id, ex is InvalidDataException
-                    ? "Média trop volumineux pour être affiché."
-                    : "Impossible de charger ce média (lien expiré ou inaccessible ?).");
+                ShowError(id, ex switch
+                {
+                    InvalidDataException => "Média trop volumineux pour être affiché.",
+
+                    // Erreurs de décodage (WIC) : le fichier a bien été reçu, mais il est abîmé ou dans un format inconnu.
+                    NotSupportedException or FormatException or COMException or ArgumentException
+                        => "Image illisible : fichier abîmé ou format non pris en charge.",
+                    _ => "Impossible de charger ce média (lien expiré ou inaccessible ?).",
+                });
             }
         }
     }
@@ -468,7 +477,7 @@ public partial class PipWindow : Window
             {
                 Log.Warn($"Lecture impossible de {item.Url}.", e.ErrorException);
                 var format = VideoCache.GetExtension(item.Url!).TrimStart('.').ToUpperInvariant();
-                ShowError(id, $"Vidéo illisible : le format {format} n'est pas pris en charge par le lecteur de Windows.");
+                ShowError(id, $"Vidéo illisible ({format}) : fichier abîmé ou codec non pris en charge par Windows.");
             }
         };
         video.Loaded += (_, _) =>
@@ -508,12 +517,15 @@ public partial class PipWindow : Window
     }
 
     /// <summary>Durée d'affichage d'un GIF vidéo : au moins une boucle complète.</summary>
-    private TimeSpan LoopTarget()
-    {
-        var natural = _video?.NaturalDuration is { HasTimeSpan: true } d ? d.TimeSpan : TimeSpan.Zero;
-        var target = natural > _imageDuration ? natural : _imageDuration;
-        return target < _maxVideoDuration ? target : _maxVideoDuration;
-    }
+    private TimeSpan LoopTarget() =>
+        DisplayDuration(_video?.NaturalDuration is { HasTimeSpan: true } d ? d.TimeSpan : TimeSpan.Zero);
+
+    /// <summary>
+    /// Durée d'affichage d'un média animé : la durée configurée, ou une boucle complète si elle est plus longue
+    /// (la chute d'un GIF est souvent à la fin), dans la limite de la durée maximale des vidéos.
+    /// </summary>
+    private TimeSpan DisplayDuration(TimeSpan animationLength) =>
+        MediaTiming.DisplayDuration(animationLength, _imageDuration, _maxVideoDuration);
 
     private void OnTick()
     {
@@ -653,14 +665,18 @@ public partial class PipWindow : Window
 
     // ───────────────────────────── Création des éléments ─────────────────────────────
 
-    private static async Task<FrameworkElement> CreateImageAsync(MediaItem item, CancellationToken cancellationToken)
+    /// <returns>L'image, et la durée d'une boucle pour un GIF animé (zéro pour une image fixe).</returns>
+    private static async Task<(FrameworkElement Image, TimeSpan AnimationLength)> CreateImageAsync(MediaItem item, CancellationToken cancellationToken)
     {
         var data = await HttpClients.GetBytesAsync(item.Url!, MaxImageBytes, cancellationToken);
         var image = new Image { Stretch = Stretch.Uniform };
         RenderOptions.SetBitmapScalingMode(image, BitmapScalingMode.HighQuality);
+        var animationLength = TimeSpan.Zero;
 
         if (item.Kind == MediaKind.AnimatedImage)
         {
+            animationLength = await Task.Run(() => MediaTiming.ReadGifLength(data), cancellationToken);
+
             // WPF n'anime pas les GIF nativement (ils restaient figés dans la v1).
             var source = new BitmapImage();
             source.BeginInit();
@@ -677,7 +693,7 @@ public partial class PipWindow : Window
         }
 
         ApplySpoiler(image, item);
-        return image;
+        return (image, animationLength);
     }
 
     private static BitmapSource DecodeStill(byte[] data)
@@ -907,7 +923,14 @@ public partial class PipWindow : Window
 
     private void SkipButton_Click(object sender, RoutedEventArgs e) => Skip();
 
-    private void PinToggle_Click(object sender, RoutedEventArgs e) => SetKeepVisible(PinToggle.IsChecked == true, raiseEvent: true);
+    /// <summary>Checked/Unchecked plutôt que Click : l'épingle fonctionne aussi au clavier et via l'accessibilité.</summary>
+    private void PinToggle_Changed(object sender, RoutedEventArgs e)
+    {
+        if (!_updatingPin)
+        {
+            SetKeepVisible(PinToggle.IsChecked == true, raiseEvent: true);
+        }
+    }
 
     private void HideButton_Click(object sender, RoutedEventArgs e) => HideWindow();
 

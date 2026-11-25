@@ -17,6 +17,10 @@ public sealed record EmbedInfo(
     string? VideoUrl,
     bool HasProvider);
 
+/// <summary>Sticker d'un message (PNG, APNG ou GIF ; les stickers Lottie ne sont pas affichables).</summary>
+/// <param name="IsAnimated">Vrai pour un sticker GIF (les APNG s'affichent sur leur première image).</param>
+public sealed record StickerInfo(string Url, string Name, bool IsAnimated);
+
 /// <summary>Message reçu dans le salon surveillé (ou via la commande /caption).</summary>
 public sealed record IncomingMessage(
     ulong Id,
@@ -28,6 +32,8 @@ public sealed record IncomingMessage(
 {
     /// <summary>Le contenu est une légende explicite (commande /caption) : toujours affichée.</summary>
     public bool IsExplicitCaption { get; init; }
+
+    public IReadOnlyList<StickerInfo> Stickers { get; init; } = [];
 
     /// <summary>
     /// Embeds ajoutés après coup par Discord (aperçus de liens) : on ignore alors les pièces jointes,

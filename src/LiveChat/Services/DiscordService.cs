@@ -531,11 +531,15 @@ public sealed class DiscordService : IAsyncDisposable
 
     private static IncomingMessage ToIncoming(SocketMessage message, bool embedsOnly)
     {
-        var attachments = message.Attachments
+        var sources = WithForwardedMessages(message);
+
+        var attachments = sources
+            .SelectMany(m => m.Attachments)
             .Select(a => new AttachmentInfo(a.Url, a.Filename, a.ContentType))
             .ToList();
 
-        var embeds = message.Embeds
+        var embeds = sources
+            .SelectMany(m => m.Embeds)
             .Select(e => new EmbedInfo(
                 e.Type.ToString(),
                 e.Url,
@@ -545,17 +549,66 @@ public sealed class DiscordService : IAsyncDisposable
                 e.Provider.HasValue))
             .ToList();
 
+        var stickers = sources
+            .SelectMany(m => m.Stickers ?? [])
+            .Select(ToSticker)
+            .OfType<StickerInfo>()
+            .ToList();
+
+        // Message transféré sans commentaire : le texte d'origine sert de légende.
+        var content = message.CleanContent;
+        if (string.IsNullOrWhiteSpace(content))
+        {
+            content = sources.Skip(1).Select(m => m.Content).FirstOrDefault(c => !string.IsNullOrWhiteSpace(c));
+        }
+
         return new IncomingMessage(
             message.Id,
             DisplayName(message.Author),
             AvatarUrl(message.Author),
-            message.CleanContent ?? "",
+            content ?? "",
             attachments,
             embeds)
         {
             EmbedsOnly = embedsOnly,
+            Stickers = stickers,
         };
     }
+
+    /// <summary>
+    /// Le message et, s'il s'agit d'un transfert (bouton « Transférer » de Discord), le message d'origine :
+    /// ses médias ne sont pas dans les pièces jointes du transfert mais dans un instantané.
+    /// </summary>
+    private static List<IMessage> WithForwardedMessages(SocketMessage message)
+    {
+        var sources = new List<IMessage> { message };
+        try
+        {
+            if (message is SocketUserMessage { ForwardedMessages.Count: > 0 } forward)
+            {
+                sources.AddRange(forward.ForwardedMessages.Select(f => f.Message).Where(m => m is not null));
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Warn("Lecture du message transféré impossible.", ex);
+        }
+
+        return sources;
+    }
+
+    /// <summary>
+    /// URL d'un sticker affichable. Discord sert les stickers GIF uniquement depuis media.discordapp.net ;
+    /// les stickers Lottie (animations vectorielles JSON) ne peuvent pas être affichés.
+    /// </summary>
+    private static StickerInfo? ToSticker(IStickerItem sticker) => sticker.Format switch
+    {
+        StickerFormatType.Png or StickerFormatType.Apng
+            => new StickerInfo($"https://media.discordapp.net/stickers/{sticker.Id}.png", sticker.Name, IsAnimated: false),
+        StickerFormatType.Gif
+            => new StickerInfo($"https://media.discordapp.net/stickers/{sticker.Id}.gif", sticker.Name, IsAnimated: true),
+        _ => null,
+    };
 
     private static string DisplayName(IUser user) =>
         (user as IGuildUser)?.DisplayName ?? user.GlobalName ?? user.Username;
