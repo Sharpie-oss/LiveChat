@@ -49,6 +49,7 @@ public partial class PipWindow : Window
     private readonly DispatcherTimer _toastTimer;
 
     private MediaItem? _current;
+    private MediaItem? _lastPresented;
     private int _presentationId;
     private PlaybackMode _mode;
     private DateTime _startedAt;
@@ -145,6 +146,47 @@ public partial class PipWindow : Window
 
         UpdateQueueBadge();
         ShowNext();
+    }
+
+    /// <summary>Réaffiche le dernier média présenté (à la suite de la file s'il y en a une).</summary>
+    /// <returns><c>false</c> si aucun média n'a encore été affiché.</returns>
+    public bool Replay()
+    {
+        if (_lastPresented is not { } last)
+        {
+            return false;
+        }
+
+        Enqueue([last]);
+        return true;
+    }
+
+    /// <summary>
+    /// Message supprimé sur Discord (par un modérateur, par exemple) : ses médias sont retirés de la file, passés
+    /// s'ils sont à l'écran, et ne peuvent plus être rejoués.
+    /// </summary>
+    /// <returns>Nombre de médias retirés.</returns>
+    public int RemoveMessage(ulong messageId)
+    {
+        if (messageId == 0)
+        {
+            return 0;
+        }
+
+        var removed = _queue.RemoveWhere(i => i.MessageId == messageId);
+        if (_lastPresented?.MessageId == messageId)
+        {
+            _lastPresented = null;
+        }
+
+        if (_current?.MessageId == messageId)
+        {
+            removed++;
+            Skip();
+        }
+
+        UpdateQueueBadge();
+        return removed;
     }
 
     /// <summary>Passe au média suivant.</summary>
@@ -282,6 +324,7 @@ public partial class PipWindow : Window
     private async Task PresentAsync(MediaItem item)
     {
         _current = item;
+        _lastPresented = item;
         var id = ++_presentationId;
 
         UpdateQueueBadge();
@@ -624,6 +667,7 @@ public partial class PipWindow : Window
 
         foreach (var image in MediaHost.Children.OfType<Image>())
         {
+            image.BeginAnimation(Image.SourceProperty, null); // Animation APNG.
             ImageBehavior.SetAnimatedSource(image, null);
         }
 
@@ -689,11 +733,38 @@ public partial class PipWindow : Window
         else
         {
             // Décodage hors du thread de l'interface pour ne pas la figer sur les grosses images.
-            image.Source = await Task.Run(() => DecodeStill(data), cancellationToken);
+            // Les PNG animés (APNG, la plupart des stickers Discord) sont animés au lieu d'être figés.
+            var frames = await Task.Run(() => Apng.IsAnimated(data) ? Apng.Decode(data) : null, cancellationToken);
+            if (frames is not null)
+            {
+                animationLength = Animate(image, frames);
+            }
+            else
+            {
+                image.Source = await Task.Run(() => DecodeStill(data), cancellationToken);
+            }
         }
 
         ApplySpoiler(image, item);
         return (image, animationLength);
+    }
+
+    /// <summary>Anime l'image en boucle ; renvoie la durée d'une boucle.</summary>
+    private static TimeSpan Animate(Image image, IReadOnlyList<AnimationFrame> frames)
+    {
+        var animation = new ObjectAnimationUsingKeyFrames { RepeatBehavior = RepeatBehavior.Forever };
+        var time = TimeSpan.Zero;
+        foreach (var frame in frames)
+        {
+            animation.KeyFrames.Add(new DiscreteObjectKeyFrame(frame.Image, KeyTime.FromTimeSpan(time)));
+            time += frame.Delay;
+        }
+
+        animation.Duration = time;
+        animation.Freeze();
+        image.Source = frames[0].Image;
+        image.BeginAnimation(Image.SourceProperty, animation);
+        return time;
     }
 
     private static BitmapSource DecodeStill(byte[] data)

@@ -9,9 +9,10 @@ LiveChat affiche **en incrustation, par-dessus vos jeux et applications**, les i
 - **Images, GIF animés, vidéos, stickers** (pièces jointes, liens directs, GIF du sélecteur de Discord — Klipy, Tenor, Giphy —, images des aperçus de liens, messages transférés).
 - **File d'attente** : les médias s'affichent l'un après l'autre, avec une barre de progression et un badge `+N` pour les médias en attente. La file est limitée, pour se protéger du spam.
 - **Légendes** : le texte du message s'affiche par-dessus le média. La commande `/caption` permet d'envoyer un média avec une légende.
-- **Raccourcis clavier globaux**, actifs même en jeu : **STOP** (arrête et vide la file, touche `Pause` par défaut) et **Passer**.
+- **Raccourcis clavier globaux**, actifs même en jeu : **STOP** (arrête et vide la file, touche `Pause` par défaut), **Passer** et **Rejouer** (réaffiche le dernier média).
 - **Commandes slash** `/caption`, `/skip` et `/stop`. Les deux dernières sont réservées aux membres qui peuvent gérer les messages.
 - **Spoilers** floutés, avec un clic pour les dévoiler.
+- **Modération** : un message supprimé sur Discord disparaît aussi de LiveChat (file d'attente, affichage en cours, « Rejouer »).
 - **Discrétion** : la fenêtre ne vole pas le focus de votre jeu, n'apparaît pas dans Alt+Tab et se masque automatiquement quand il n'y a rien à afficher. Vous pouvez aussi l'épingler.
 - **Volume** réglable avec la molette de la souris sur la fenêtre ou avec le bouton dédié. Il est mémorisé, comme la position et la taille de la fenêtre.
 - **Mise en pause** de la réception depuis l'icône de notification.
@@ -47,6 +48,7 @@ LiveChat est **autonome** : un seul `LiveChat.exe` (Windows 10/11 64 bits), sans
 |---|---|
 | Afficher / masquer la fenêtre | Clic sur l'icône de notification, ou menu › *Afficher / masquer* |
 | Passer au média suivant | Bouton ⏭ de la fenêtre, raccourci « Passer », menu, ou `/skip` |
+| Revoir le dernier média | Raccourci « Rejouer » (à choisir dans les paramètres), ou menu › *Rejouer le dernier média* |
 | Tout arrêter | Raccourci STOP (`Pause` par défaut), menu, ou `/stop` |
 | Régler le volume | Molette sur la fenêtre, ou bouton 🔊 |
 | Garder la fenêtre affichée | Bouton 📌 |
@@ -65,13 +67,13 @@ LiveChat est **autonome** : un seul `LiveChat.exe` (Windows 10/11 64 bits), sans
 
 - Les paramètres sont dans `%APPDATA%\LiveChat\settings.json`. Le token y est **chiffré** (DPAPI, portée utilisateur).
 - L'ancien `config.json` de la v1, qui contenait le token en clair à côté de l'exécutable, est importé automatiquement puis supprimé.
-- Les journaux sont dans `%APPDATA%\LiveChat\logs`, conservés 7 jours (menu › *Ouvrir le dossier des journaux*). Le token n'y est jamais écrit.
+- Les journaux sont dans `%APPDATA%\LiveChat\logs`, conservés 7 jours (menu › *Ouvrir le dossier des journaux*). Chaque message reçu avec un média y est résumé (pièces jointes, aperçus, médias affichés), sans son texte. Le token n'y est jamais écrit.
 - LiveChat ne contacte que Discord, les hébergeurs des médias postés, et l'API GitHub pour vérifier les mises à jour (désactivable).
 
 ## Formats pris en charge
 
 - **Images** : PNG, JPEG, BMP, TIFF, WebP (codec WebP de Windows), GIF animé. Un GIF plus long que la durée d'affichage est montré jusqu'au bout.
-- **Stickers** : PNG et GIF ; les stickers APNG s'affichent sur leur première image, les stickers Lottie ne sont pas pris en charge.
+- **Stickers** : PNG, APNG (animés) et GIF ; les stickers Lottie (animations vectorielles) ne sont pas pris en charge.
 - **Vidéos** : MP4 (H.264), MOV, WebM (VP8, VP9), MKV, WMV, AVI. Le WebM utilise les décodeurs VP8/VP9 de Windows (« Extensions vidéo VP9 », généralement préinstallées sur Windows 10 et 11) ; l'AV1 et le HEVC demandent leur extension du Microsoft Store. Une vidéo illisible affiche la raison pendant 4 s, puis LiveChat passe au média suivant.
 - Les liens YouTube, Twitch, etc. ne sont pas lus : ce ne sont pas des fichiers vidéo.
 - Un lien n'est affiché que si Discord en génère un aperçu. Un lien mort, ou placé entre `||barres de spoiler||`, n'a pas d'aperçu : il n'est donc pas affiché. Pour un média en spoiler, envoyez le fichier en cochant « Marquer comme spoiler ».

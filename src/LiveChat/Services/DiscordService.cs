@@ -54,6 +54,9 @@ public sealed class DiscordService : IAsyncDisposable
 
     public event Action<RemoteCommand>? CommandReceived;
 
+    /// <summary>Message du salon supprimé (identifiant) : ses médias ne doivent plus être affichés.</summary>
+    public event Action<ulong>? MessageRemoved;
+
     public ConnectionStatus Status { get; private set; } = new(ConnectionState.Disconnected, "Non connecté");
 
     /// <summary>Nom lisible du salon surveillé (#salon · Serveur), connu une fois connecté.</summary>
@@ -184,6 +187,8 @@ public sealed class DiscordService : IAsyncDisposable
         client.Disconnected += ex => OnDisconnected(client, ex);
         client.MessageReceived += message => OnMessageReceived(client, message);
         client.MessageUpdated += (_, message, channel) => OnMessageUpdated(client, message, channel);
+        client.MessageDeleted += (message, channel) => OnMessagesDeleted(client, [message.Id], channel.Id);
+        client.MessagesBulkDeleted += (messages, channel) => OnMessagesDeleted(client, messages.Select(m => m.Id), channel.Id);
         client.SlashCommandExecuted += command => OnSlashCommandAsync(client, command);
         return client;
     }
@@ -379,6 +384,19 @@ public sealed class DiscordService : IAsyncDisposable
         return Task.CompletedTask;
     }
 
+    private Task OnMessagesDeleted(DiscordSocketClient client, IEnumerable<ulong> messageIds, ulong channelId)
+    {
+        if (IsCurrent(client) && channelId == _channelId)
+        {
+            foreach (var id in messageIds)
+            {
+                MessageRemoved?.Invoke(id);
+            }
+        }
+
+        return Task.CompletedTask;
+    }
+
     private static T? FindException<T>(Exception? exception)
         where T : Exception
     {
@@ -491,7 +509,7 @@ public sealed class DiscordService : IAsyncDisposable
     {
         try
         {
-            var commands = new ApplicationCommandProperties[]
+            var commands = new SlashCommandProperties[]
             {
                 new SlashCommandBuilder()
                     .WithName("caption")
@@ -511,8 +529,20 @@ public sealed class DiscordService : IAsyncDisposable
                     .Build(),
             };
 
-            // Commandes de serveur : disponibles immédiatement, et « bulk overwrite » est idempotent.
-            await guild.BulkOverwriteApplicationCommandAsync(commands);
+            // Commandes de serveur : disponibles immédiatement. Elles ne changent qu'avec une nouvelle version :
+            // on ne les réécrit que si nécessaire (Discord limite ces appels, et chaque relance de LiveChat
+            // déclenchait « Rate limit triggered » dans le journal).
+            var existing = await guild.GetApplicationCommandsAsync();
+            if (CommandShape.Signature(existing.Where(c => c.Type == ApplicationCommandType.Slash).Select(CommandShape.From))
+                == CommandShape.Signature(commands.Select(CommandShape.From)))
+            {
+                Log.Info($"Commandes slash déjà à jour sur le serveur {guild.Name}.");
+            }
+            else
+            {
+                await guild.BulkOverwriteApplicationCommandAsync(commands);
+                Log.Info($"Commandes slash enregistrées sur le serveur {guild.Name}.");
+            }
 
             // La v1 enregistrait /caption en commande globale à chaque connexion : on la supprime.
             foreach (var legacy in (await client.GetGlobalApplicationCommandsAsync()).Where(c => c.Name == "caption"))
@@ -521,7 +551,6 @@ public sealed class DiscordService : IAsyncDisposable
             }
 
             _commandsRegistered = true;
-            Log.Info($"Commandes slash enregistrées sur le serveur {guild.Name}.");
         }
         catch (Exception ex)
         {

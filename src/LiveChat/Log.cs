@@ -11,19 +11,36 @@ public static class Log
 {
     private const int RetentionDays = 7;
     private static readonly Lock Gate = new();
+    private static string? _directory;
     private static string? _file;
+    private static DateTime _fileDate;
 
-    public static void Initialize()
+    /// <summary>Horloge (remplaçable par les tests).</summary>
+    internal static Func<DateTime> Clock { get; set; } = () => DateTime.Now;
+
+    public static void Initialize() => Initialize(AppPaths.LogDirectory);
+
+    internal static void Initialize(string? directory)
     {
-        try
+        lock (Gate)
         {
-            Directory.CreateDirectory(AppPaths.LogDirectory);
-            _file = Path.Combine(AppPaths.LogDirectory, $"livechat-{DateTime.Now:yyyyMMdd}.log");
-            PurgeOldFiles();
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine($"Journal indisponible : {ex}");
+            _directory = null;
+            _file = null;
+            if (directory is null)
+            {
+                return;
+            }
+
+            try
+            {
+                Directory.CreateDirectory(directory);
+                _directory = directory;
+                OpenFileFor(Clock());
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Journal indisponible : {ex}");
+            }
         }
     }
 
@@ -35,8 +52,9 @@ public static class Log
 
     private static void Write(string level, string message, Exception? exception)
     {
+        var now = Clock();
         var line = new StringBuilder()
-            .Append(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"))
+            .Append(now.ToString("yyyy-MM-dd HH:mm:ss.fff"))
             .Append(" [").Append(level).Append("] ")
             .Append(message);
         if (exception is not null)
@@ -47,16 +65,23 @@ public static class Log
         var text = line.ToString();
         Debug.WriteLine(text);
 
-        if (_file is null)
-        {
-            return;
-        }
-
         lock (Gate)
         {
+            if (_directory is null)
+            {
+                return;
+            }
+
             try
             {
-                File.AppendAllText(_file, text + Environment.NewLine, Encoding.UTF8);
+                // LiveChat reste souvent ouvert plusieurs jours : on change de fichier à minuit
+                // (avant, tout s'écrivait dans le fichier du jour de lancement, sans jamais être purgé).
+                if (now.Date != _fileDate)
+                {
+                    OpenFileFor(now);
+                }
+
+                File.AppendAllText(_file!, text + Environment.NewLine, Encoding.UTF8);
             }
             catch (IOException)
             {
@@ -68,10 +93,17 @@ public static class Log
         }
     }
 
-    private static void PurgeOldFiles()
+    private static void OpenFileFor(DateTime now)
     {
-        var limit = DateTime.Now.AddDays(-RetentionDays);
-        foreach (var file in Directory.EnumerateFiles(AppPaths.LogDirectory, "livechat-*.log"))
+        _fileDate = now.Date;
+        _file = Path.Combine(_directory!, $"livechat-{now:yyyyMMdd}.log");
+        PurgeOldFiles(now);
+    }
+
+    private static void PurgeOldFiles(DateTime now)
+    {
+        var limit = now.AddDays(-RetentionDays);
+        foreach (var file in Directory.EnumerateFiles(_directory!, "livechat-*.log"))
         {
             try
             {
@@ -81,6 +113,9 @@ public static class Log
                 }
             }
             catch (IOException)
+            {
+            }
+            catch (UnauthorizedAccessException)
             {
             }
         }

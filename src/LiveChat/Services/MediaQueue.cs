@@ -40,5 +40,23 @@ public sealed class MediaQueue
 
     public bool TryDequeue(out MediaItem item) => _items.TryDequeue(out item!);
 
+    /// <summary>Retire les éléments correspondants en conservant l'ordre des autres.</summary>
+    /// <returns>Nombre d'éléments retirés.</returns>
+    public int RemoveWhere(Func<MediaItem, bool> predicate)
+    {
+        var kept = _items.Where(i => !predicate(i)).ToList();
+        var removed = _items.Count - kept.Count;
+        if (removed > 0)
+        {
+            _items.Clear();
+            foreach (var item in kept)
+            {
+                _items.Enqueue(item);
+            }
+        }
+
+        return removed;
+    }
+
     public void Clear() => _items.Clear();
 }

@@ -22,6 +22,7 @@ public sealed class TrayIcon : IDisposable
 
         menu.Items.Add(Item("Afficher / masquer la fenêtre", () => ToggleWindowRequested?.Invoke(), bold: true));
         menu.Items.Add(Item("Passer le média en cours", () => SkipRequested?.Invoke()));
+        menu.Items.Add(Item("Rejouer le dernier média", () => ReplayRequested?.Invoke()));
         menu.Items.Add(Item("STOP : arrêter et vider la file", () => StopRequested?.Invoke()));
 
         _pauseItem = new Forms.ToolStripMenuItem("Mettre en pause la réception") { CheckOnClick = true };
@@ -71,6 +72,8 @@ public sealed class TrayIcon : IDisposable
 
     public event Action? SkipRequested;
 
+    public event Action? ReplayRequested;
+
     public event Action? StopRequested;
 
     public event Action<bool>? PauseToggled;
@@ -100,7 +103,18 @@ public sealed class TrayIcon : IDisposable
     {
         _pendingUpdateVersion = version;
         _updateItem.Text = version is null ? "Rechercher des mises à jour" : $"Installer la mise à jour {version}…";
-        _updateItem.Font = new System.Drawing.Font(_updateItem.Font, version is null ? System.Drawing.FontStyle.Regular : System.Drawing.FontStyle.Bold);
+
+        // Recherche toutes les 6 heures : on ne recrée la police (objet GDI) que si le style change.
+        var style = version is null ? System.Drawing.FontStyle.Regular : System.Drawing.FontStyle.Bold;
+        if (_updateItem.Font.Style != style)
+        {
+            var previous = _updateItem.Font;
+            _updateItem.Font = new System.Drawing.Font(previous, style);
+            if (previous.Style == System.Drawing.FontStyle.Bold)
+            {
+                previous.Dispose(); // Seule la police grasse a été créée par nous (l'autre est celle du menu).
+            }
+        }
     }
 
     /// <summary>Affiche une notification Windows ; <paramref name="onClick"/> est appelé si l'utilisateur clique dessus.</summary>

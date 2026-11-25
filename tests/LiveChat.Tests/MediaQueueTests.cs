@@ -44,6 +44,20 @@ public class MediaQueueTests
     }
 
     [Fact]
+    public void RemoveWhere_RemovesMatchingItemsAndKeepsOrder()
+    {
+        var queue = new MediaQueue();
+        queue.Enqueue([Item("a") with { MessageId = 1 }, Item("b") with { MessageId = 2 }, Item("c") with { MessageId = 1 }, Item("d") with { MessageId = 3 }]);
+
+        var removed = queue.RemoveWhere(i => i.MessageId == 1);
+
+        Assert.Equal(2, removed);
+        Assert.True(queue.TryDequeue(out var first));
+        Assert.True(queue.TryDequeue(out var second));
+        Assert.Equal(["b", "d"], [first.Author, second.Author]);
+    }
+
+    [Fact]
     public void Capacity_IsAtLeastOne()
     {
         var queue = new MediaQueue { Capacity = 0 };

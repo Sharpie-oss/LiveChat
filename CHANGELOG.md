@@ -1,5 +1,28 @@
 # Changelog
 
+## 2.1.0 — Stickers animés, modération, « Rejouer » et diagnostics
+
+### Nouveautés
+
+- **Messages supprimés** : quand un message est supprimé sur Discord (par un modérateur, par exemple), ses médias sont retirés de la file d'attente, passés s'ils sont à l'écran et ne peuvent plus être rejoués. Avant, un média supprimé dans le salon restait affiché sur le stream.
+- **Stickers animés** : les PNG animés (APNG), format de la plupart des stickers Discord, s'animent au lieu de rester figés sur leur première image. Ils sont affichés jusqu'au bout de leur animation, comme les GIF.
+- **Rejouer le dernier média** : depuis le menu de l'icône de notification, ou avec un raccourci global à choisir dans les paramètres. Pratique en jeu quand on a manqué un média.
+- **Journal plus utile** : chaque message reçu avec un média ou un aperçu y est résumé (pièces jointes, types d'aperçus, nombre de médias affichés), pour comprendre pourquoi un lien ne s'est pas affiché.
+- **Commandes slash** : elles ne sont réenregistrées auprès de Discord que si elles ont changé. Avant, chaque démarrage les réécrivait, et des relances rapprochées déclenchaient la limite de débit de Discord.
+
+### Corrections de bugs
+
+- **Journaux** : le fichier était choisi au lancement. Comme LiveChat reste souvent ouvert plusieurs jours, tout s'écrivait dans un seul fichier qui grossissait sans fin, et les journaux de plus de 7 jours n'étaient purgés qu'au redémarrage. Le fichier change désormais à minuit.
+- **Paramètres** : les curseurs s'arrêtaient à 30 s (images), 300 s (vidéos) et 50 médias, alors que les limites sont de 60 s, 600 s et 100 médias. Une valeur plus haute était silencieusement réduite au premier enregistrement.
+- **Légendes** : les liens masqués `[texte](lien)` s'affichaient à moitié (« [texte]( »), et l'*italique*, les citations `>` ainsi que les mentions brutes des messages transférés n'étaient pas nettoyés.
+- **Icône de notification** : chaque recherche de mise à jour recréait une police sans libérer la précédente (petite fuite d'objets GDI).
+- `settings.json` ne contient plus la propriété calculée `IsValidGlobalHotkey`.
+
+### Technique
+
+- GitHub Actions : `actions/checkout@v7` et `actions/setup-dotnet@v6`, car Node.js 20 est déprécié.
+- 19 nouveaux tests (131 au total), dont un test de robustesse du décodeur APNG sur 300 fichiers corrompus.
+
 ## 2.0.3 — Mise à jour depuis la 2.0.1
 
 ### Corrections de bugs

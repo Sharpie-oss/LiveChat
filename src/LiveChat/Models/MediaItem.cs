@@ -24,6 +24,9 @@ public enum MediaKind
 /// <summary>Élément prêt à être affiché dans la fenêtre d'incrustation.</summary>
 public sealed record MediaItem(MediaKind Kind, string Author)
 {
+    /// <summary>Message Discord d'origine (0 pour un aperçu local) : permet de retirer le média s'il est supprimé.</summary>
+    public ulong MessageId { get; init; }
+
     public string? Url { get; init; }
 
     public string? AvatarUrl { get; init; }

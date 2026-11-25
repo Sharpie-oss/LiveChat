@@ -63,7 +63,7 @@ public static partial class MessageParser
         }
 
         // Une même URL peut apparaître à la fois en pièce jointe et en embed.
-        items = items.DistinctBy(i => i.Url).ToList();
+        items = items.DistinctBy(i => i.Url).Select(i => i with { MessageId = message.Id }).ToList();
 
         if (items.Count > 0)
         {
@@ -81,12 +81,46 @@ public static partial class MessageParser
             var text = Clean(message.Content, options.BlurSpoilers, MaxTextLength);
             if (text is not null)
             {
-                return [new MediaItem(MediaKind.Text, message.Author) { Text = text, AvatarUrl = message.AvatarUrl }];
+                return [new MediaItem(MediaKind.Text, message.Author) { Text = text, AvatarUrl = message.AvatarUrl, MessageId = message.Id }];
             }
         }
 
         return [];
     }
+
+    /// <summary>
+    /// Résumé d'un message pour le journal (sans son texte) : « Message de Alice : 1 pièce jointe (photo.png),
+    /// 1 aperçu (video, ignoré) → 1 média ». Null pour un message sans média ni aperçu.
+    /// </summary>
+    public static string? Describe(IncomingMessage message, IReadOnlyList<MediaItem> items)
+    {
+        var parts = new List<string>();
+        if (!message.EmbedsOnly && message.Attachments.Count > 0)
+        {
+            parts.Add($"{Plural(message.Attachments.Count, "pièce jointe", "pièces jointes")} ({string.Join(", ", message.Attachments.Select(a => a.FileName))})");
+        }
+
+        if (message.Embeds.Count > 0)
+        {
+            parts.Add($"{Plural(message.Embeds.Count, "aperçu", "aperçus")} ({string.Join(", ", message.Embeds.Select(e => e.Type.ToLowerInvariant()))})");
+        }
+
+        if (!message.EmbedsOnly && message.Stickers.Count > 0)
+        {
+            parts.Add(Plural(message.Stickers.Count, "sticker", "stickers"));
+        }
+
+        if (parts.Count == 0 && items.Count == 0)
+        {
+            return null;
+        }
+
+        var origin = message.EmbedsOnly ? " (aperçu ajouté après coup)" : "";
+        var content = parts.Count > 0 ? string.Join(", ", parts) : "texte seul";
+        return $"Message de {message.Author}{origin} : {content} → {Plural(items.Count, "média affiché", "médias affichés")}.";
+    }
+
+    private static string Plural(int count, string singular, string plural) => $"{count} {(count > 1 ? plural : singular)}";
 
     /// <summary>Détermine le type d'un fichier d'après son type MIME, puis son extension.</summary>
     public static MediaKind Classify(string? contentType, string? fileName)
@@ -122,9 +156,13 @@ public static partial class MessageParser
 
         var text = SpoilerRegex().Replace(content, m => hideSpoilers ? " ▒▒▒ " : m.Groups["inner"].Value);
         text = CustomEmojiRegex().Replace(text, ":${name}:");
+        text = MaskedLinkRegex().Replace(text, "${label}"); // [texte](https://…) : on garde le texte.
+        text = RawMentionRegex().Replace(text, " "); // <@123>, <#123>, <t:…> (texte d'un message transféré).
         text = UrlRegex().Replace(text, " ");
         text = HeadingRegex().Replace(text, "");
+        text = QuoteRegex().Replace(text, "");
         text = MarkdownRegex().Replace(text, "");
+        text = ItalicRegex().Replace(text, "${text}");
         text = WhitespaceRegex().Replace(text, " ").Trim();
 
         if (text.Length == 0)
@@ -242,6 +280,19 @@ public static partial class MessageParser
 
     [GeneratedRegex(@"\*\*|__|~~|`+")]
     private static partial Regex MarkdownRegex();
+
+    [GeneratedRegex(@"\[(?<label>[^\]\n]+)\]\(\s*<?https?://[^)\s>]+>?\s*\)", RegexOptions.IgnoreCase)]
+    private static partial Regex MaskedLinkRegex();
+
+    [GeneratedRegex(@"<(?:@[!&]?\d+|#\d+|t:\d+(?::[tTdDfFR])?)>")]
+    private static partial Regex RawMentionRegex();
+
+    [GeneratedRegex(@"^\s*>{1,3}\s?", RegexOptions.Multiline)]
+    private static partial Regex QuoteRegex();
+
+    /// <summary>*italique* ou _italique_, sans toucher à 2*3*4 ni à nom_de_fichier.</summary>
+    [GeneratedRegex(@"(?<![\w*])\*(?=\S)(?<text>[^*\n]+?)(?<=\S)\*(?![\w*])|(?<!\w)_(?=\S)(?<text>[^_\n]+?)(?<=\S)_(?!\w)")]
+    private static partial Regex ItalicRegex();
 
     [GeneratedRegex(@"\s+")]
     private static partial Regex WhitespaceRegex();
