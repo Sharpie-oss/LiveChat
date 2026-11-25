@@ -125,6 +125,77 @@ public class UpdateServiceTests
             UpdateService.CleanupPreviousUpdate(target);
 
             Assert.False(File.Exists(Path.Combine(target, "LiveChat.exe.old")));
+            Assert.False(File.Exists(Path.Combine(target, UpdateService.BackupManifestName)));
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void FormatReleaseNotes_RendersChangelogMarkdownAsPlainText()
+    {
+        const string markdown = "### Nouveautés\r\n\r\n- **Stickers** : affichés (`PNG`, GIF).\r\n- Voir [la release](https://github.com/o/r).\r\n\r\n\r\n\r\n### Corrections de bugs\r\n\r\n* **WebM** : lu.";
+
+        Assert.Equal(
+            "NOUVEAUTÉS\n\n• Stickers : affichés (PNG, GIF).\n• Voir la release.\n\nCORRECTIONS DE BUGS\n\n• WebM : lu.",
+            UpdateService.FormatReleaseNotes(markdown));
+    }
+
+    [Fact]
+    public void PreloadAssemblies_LoadsLazyDependenciesQuickly()
+    {
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+
+        UpdateService.PreloadAssemblies();
+
+        // Utilisée seulement pour les GIF : c'est elle qui manquait à la fermeture pendant la mise à jour.
+        Assert.Contains(AppDomain.CurrentDomain.GetAssemblies(), a => a.GetName().Name == "WpfAnimatedGif");
+        Assert.True(stopwatch.Elapsed < TimeSpan.FromSeconds(5), $"Préchargement trop long : {stopwatch.Elapsed}.");
+    }
+
+    [Fact]
+    public void CleanupPreviousUpdate_KeepsUnrelatedOldFiles()
+    {
+        // LiveChat.exe lancé depuis Téléchargements : les autres fichiers .old ne lui appartiennent pas.
+        var downloads = Path.Combine(Path.GetTempPath(), "LiveChat.Tests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(Path.Combine(downloads, "Photos"));
+        try
+        {
+            File.WriteAllText(Path.Combine(downloads, "LiveChat.exe"), "v2");
+            File.WriteAllText(Path.Combine(downloads, "LiveChat.exe.old"), "v1"); // Laissé par la mise à jour 2.0.1.
+            File.WriteAllText(Path.Combine(downloads, "rapport.docx.old"), "à garder");
+            File.WriteAllText(Path.Combine(downloads, "Photos", "vacances.jpg.old"), "à garder");
+
+            UpdateService.CleanupPreviousUpdate(downloads);
+
+            Assert.False(File.Exists(Path.Combine(downloads, "LiveChat.exe.old")));
+            Assert.True(File.Exists(Path.Combine(downloads, "rapport.docx.old")));
+            Assert.True(File.Exists(Path.Combine(downloads, "Photos", "vacances.jpg.old")));
+        }
+        finally
+        {
+            Directory.Delete(downloads, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void CleanupPreviousUpdate_IgnoresManifestEntriesOutsideTheAppFolder()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "LiveChat.Tests", Guid.NewGuid().ToString("N"));
+        var app = Path.Combine(root, "app");
+        Directory.CreateDirectory(app);
+        try
+        {
+            File.WriteAllText(Path.Combine(root, "ailleurs.old"), "à garder");
+            File.WriteAllText(Path.Combine(app, "lib.dll.old"), "sauvegarde");
+            File.WriteAllLines(Path.Combine(app, UpdateService.BackupManifestName), [@"..\ailleurs.old", "lib.dll.old", "settings.json"]);
+
+            UpdateService.CleanupPreviousUpdate(app);
+
+            Assert.True(File.Exists(Path.Combine(root, "ailleurs.old")));
+            Assert.False(File.Exists(Path.Combine(app, "lib.dll.old")));
         }
         finally
         {

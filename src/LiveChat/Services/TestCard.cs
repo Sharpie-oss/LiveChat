@@ -74,8 +74,16 @@ public static class TestCard
 
         var path = uri is { IsFile: false } ? uri.AbsolutePath : pathOrUrl; // Sans la query string.
         var kind = MessageParser.Classify(null, path);
+        var fileName = Path.GetFileName(path);
         return kind == MediaKind.File
             ? null
-            : new MediaItem(kind, "Aperçu") { Url = url, Caption = Path.GetFileName(path) };
+            : new MediaItem(kind, "Aperçu")
+            {
+                Url = url,
+                Caption = fileName,
+
+                // Même convention que Discord : « SPOILER_photo.png » s'affiche flouté.
+                IsSpoiler = new AttachmentInfo(url, fileName, null).IsSpoiler,
+            };
     }
 }

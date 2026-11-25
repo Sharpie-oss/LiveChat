@@ -53,13 +53,13 @@
                     </StackPanel>
 
                     <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,6,0" Cursor="Arrow">
-                        <Button x:Name="VolumeButton" Style="{StaticResource IconButtonStyle}" Content="&#xE767;"
+                        <Button x:Name="VolumeButton" Style="{StaticResource IconButtonStyle}" Content="&#xE767;" AutomationProperties.Name="Volume"
                                 ToolTip="Volume (ou molette de la souris sur la fenêtre)" Click="VolumeButton_Click" />
-                        <Button x:Name="SkipButton" Style="{StaticResource IconButtonStyle}" Content="&#xE893;"
+                        <Button x:Name="SkipButton" Style="{StaticResource IconButtonStyle}" Content="&#xE893;" AutomationProperties.Name="Passer"
                                 ToolTip="Passer au média suivant" Click="SkipButton_Click" IsEnabled="False" />
-                        <ToggleButton x:Name="PinToggle" Style="{StaticResource IconButtonStyle}" Content="&#xE718;"
-                                      ToolTip="Garder la fenêtre visible même sans média" Click="PinToggle_Click" />
-                        <Button Style="{StaticResource IconButtonStyle}" Content="&#xE8BB;" FontSize="10"
+                        <ToggleButton x:Name="PinToggle" Style="{StaticResource IconButtonStyle}" Content="&#xE718;" AutomationProperties.Name="Garder visible"
+                                      ToolTip="Garder la fenêtre visible même sans média" Checked="PinToggle_Changed" Unchecked="PinToggle_Changed" />
+                        <Button Style="{StaticResource IconButtonStyle}" Content="&#xE8BB;" FontSize="10" AutomationProperties.Name="Masquer"
                                 ToolTip="Masquer (LiveChat reste dans la zone de notification)" Click="HideButton_Click" />
                     </StackPanel>
 
@@ -70,7 +70,7 @@
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock x:Name="VolumeIcon" Text="&#xE767;" FontFamily="{StaticResource IconFont}" FontSize="14"
                                            Foreground="{StaticResource MutedTextBrush}" VerticalAlignment="Center" Margin="0,0,10,0" />
-                                <Slider x:Name="VolumeSlider" Width="130" Minimum="0" Maximum="100" SmallChange="5" LargeChange="10"
+                                <Slider x:Name="VolumeSlider" Width="130" AutomationProperties.Name="Volume des vidéos" Minimum="0" Maximum="100" SmallChange="5" LargeChange="10"
                                         VerticalAlignment="Center" ValueChanged="VolumeSlider_ValueChanged" />
                                 <TextBlock x:Name="VolumeText" Width="44" TextAlignment="Right" FontSize="12"
                                            Foreground="{StaticResource TextBrush}" VerticalAlignment="Center" />

@@ -6,7 +6,7 @@ LiveChat affiche **en incrustation, par-dessus vos jeux et applications**, les i
 
 ## Fonctionnalités
 
-- **Images, GIF animés, vidéos** (pièces jointes, liens directs, GIF Tenor/Giphy, images des aperçus de liens).
+- **Images, GIF animés, vidéos, stickers** (pièces jointes, liens directs, GIF du sélecteur de Discord — Klipy, Tenor, Giphy —, images des aperçus de liens, messages transférés).
 - **File d'attente** : les médias s'affichent l'un après l'autre, avec une barre de progression et un badge `+N` pour les médias en attente. La file est limitée, pour se protéger du spam.
 - **Légendes** : le texte du message s'affiche par-dessus le média. La commande `/caption` permet d'envoyer un média avec une légende.
 - **Raccourcis clavier globaux**, actifs même en jeu : **STOP** (arrête et vide la file, touche `Pause` par défaut) et **Passer**.
@@ -15,7 +15,7 @@ LiveChat affiche **en incrustation, par-dessus vos jeux et applications**, les i
 - **Discrétion** : la fenêtre ne vole pas le focus de votre jeu, n'apparaît pas dans Alt+Tab et se masque automatiquement quand il n'y a rien à afficher. Vous pouvez aussi l'épingler.
 - **Volume** réglable avec la molette de la souris sur la fenêtre ou avec le bouton dédié. Il est mémorisé, comme la position et la taille de la fenêtre.
 - **Mise en pause** de la réception depuis l'icône de notification.
-- **Mise à jour automatique** depuis les Releases GitHub, avec vérification SHA-256.
+- **Mise à jour automatique** depuis les Releases GitHub (recherche au démarrage puis toutes les 6 heures), avec vérification SHA-256.
 - **Token chiffré** avec DPAPI (Windows), lisible uniquement par votre compte Windows.
 
 ## Installation
@@ -58,7 +58,7 @@ LiveChat est **autonome** : un seul `LiveChat.exe` (Windows 10/11 64 bits), sans
 | Option | Effet |
 |---|---|
 | `--test` | Affiche la carte de test au démarrage. |
-| `--preview <fichier\|url>` | Affiche un média local ou distant, par exemple pour vérifier qu'un format vidéo est lu par Windows. Peut être répété. |
+| `--preview <fichier\|url>` | Affiche un média local ou distant, par exemple pour vérifier qu'un format vidéo est lu par Windows. Peut être répété. Un fichier nommé `SPOILER_…` est flouté, comme sur Discord. |
 | `LIVECHAT_DATA_DIR` (variable d'environnement) | Change le dossier des données (usage portable). |
 
 ## Données et confidentialité
@@ -70,9 +70,11 @@ LiveChat est **autonome** : un seul `LiveChat.exe` (Windows 10/11 64 bits), sans
 
 ## Formats pris en charge
 
-- **Images** : PNG, JPEG, BMP, TIFF, WebP (codec WebP de Windows), GIF animé.
-- **Vidéos** : MP4 (H.264), MOV, WMV, AVI. Le WebM et le MKV dépendent des codecs installés : les « Extensions de vidéo web » du Microsoft Store ajoutent le WebM. Une vidéo illisible est passée automatiquement.
+- **Images** : PNG, JPEG, BMP, TIFF, WebP (codec WebP de Windows), GIF animé. Un GIF plus long que la durée d'affichage est montré jusqu'au bout.
+- **Stickers** : PNG et GIF ; les stickers APNG s'affichent sur leur première image, les stickers Lottie ne sont pas pris en charge.
+- **Vidéos** : MP4 (H.264), MOV, WebM (VP8, VP9), MKV, WMV, AVI. Le WebM utilise les décodeurs VP8/VP9 de Windows (« Extensions vidéo VP9 », généralement préinstallées sur Windows 10 et 11) ; l'AV1 et le HEVC demandent leur extension du Microsoft Store. Une vidéo illisible affiche la raison pendant 4 s, puis LiveChat passe au média suivant.
 - Les liens YouTube, Twitch, etc. ne sont pas lus : ce ne sont pas des fichiers vidéo.
+- Un lien n'est affiché que si Discord en génère un aperçu. Un lien mort, ou placé entre `||barres de spoiler||`, n'a pas d'aperçu : il n'est donc pas affiché. Pour un média en spoiler, envoyez le fichier en cochant « Marquer comme spoiler ».
 - La fenêtre reste au premier plan au-dessus des jeux en *plein écran fenêtré* (borderless). Les jeux en plein écran exclusif la masquent.
 
 ## Développement
@@ -115,6 +117,6 @@ git tag v2.0.0
 git push origin v2.0.0
 ```
 
-Le workflow `release.yml` publie alors `LiveChat-win-x64.zip` (un seul exécutable autonome, environ 62 Mo) et sa somme SHA-256 dans une release GitHub. C'est cette archive qu'utilise la mise à jour automatique.
+Le workflow `release.yml` publie alors `LiveChat-win-x64.zip` (un seul exécutable autonome non compressé d'environ 155 Mo, soit une archive d'environ 65 Mo) et sa somme SHA-256 dans une release GitHub. C'est cette archive qu'utilise la mise à jour automatique.
 
 Voir [CHANGELOG.md](CHANGELOG.md) pour l'historique des versions.

@@ -20,7 +20,7 @@ public partial class UpdateWindow : Window
         _service = service;
 
         VersionText.Text = $"LiveChat {update.Version.ToString(3)} est disponible (version installée : {UpdateService.CurrentVersion.ToString(3)}).";
-        NotesText.Text = string.IsNullOrWhiteSpace(update.ReleaseNotes) ? "Aucune note de version." : update.ReleaseNotes.Trim();
+        NotesText.Text = string.IsNullOrWhiteSpace(update.ReleaseNotes) ? "Aucune note de version." : UpdateService.FormatReleaseNotes(update.ReleaseNotes);
         ReleaseLink.NavigateUri = new Uri(update.ReleasePageUrl);
     }
 

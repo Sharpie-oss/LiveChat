@@ -33,7 +33,7 @@
                         </StackPanel>
                     </StackPanel>
                     <Button Style="{StaticResource IconButtonStyle}" Content="&#xE8BB;" FontSize="10" HorizontalAlignment="Right"
-                            VerticalAlignment="Top" Margin="0,12,12,0" ToolTip="Fermer" Click="Cancel_Click" IsCancel="True" />
+                            VerticalAlignment="Top" Margin="0,12,12,0" ToolTip="Fermer" AutomationProperties.Name="Fermer" Click="Cancel_Click" IsCancel="True" />
                 </Grid>
 
                 <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="22,0,18,0">
@@ -42,11 +42,11 @@
                         <TextBlock Text="CONNEXION DISCORD" Style="{StaticResource SectionTitleStyle}" />
 
                         <TextBlock Text="Bot Token" Style="{StaticResource LabelStyle}" />
-                        <PasswordBox x:Name="TokenBox" />
+                        <PasswordBox x:Name="TokenBox" AutomationProperties.Name="Bot Token" />
                         <TextBlock x:Name="TokenHint" Style="{StaticResource HintStyle}" />
 
                         <TextBlock Text="Salon à surveiller" Style="{StaticResource LabelStyle}" />
-                        <TextBox x:Name="ChannelBox" />
+                        <TextBox x:Name="ChannelBox" AutomationProperties.Name="Salon à surveiller" />
                         <TextBlock Style="{StaticResource HintStyle}">
                             ID du salon ou lien du salon. Dans Discord, activez le mode développeur
                             (Paramètres › Avancés) puis clic droit sur le salon › « Copier l'identifiant du salon ».
@@ -67,28 +67,28 @@
                                        Foreground="{StaticResource MutedTextBrush}" />
                             <TextBlock Text="Durée d'affichage des images et GIF" Style="{StaticResource LabelStyle}" />
                         </DockPanel>
-                        <Slider x:Name="ImageDurationSlider" Minimum="2" Maximum="30" IsSnapToTickEnabled="True" TickFrequency="1" Margin="0,0,0,12" />
+                        <Slider x:Name="ImageDurationSlider" AutomationProperties.Name="Durée d'affichage des images et GIF (secondes)" Minimum="2" Maximum="30" IsSnapToTickEnabled="True" TickFrequency="1" Margin="0,0,0,12" />
 
                         <DockPanel>
                             <TextBlock DockPanel.Dock="Right" Text="{Binding Value, ElementName=VideoDurationSlider, StringFormat={}{0:0} s}"
                                        Foreground="{StaticResource MutedTextBrush}" />
                             <TextBlock Text="Durée maximale d'une vidéo" Style="{StaticResource LabelStyle}" />
                         </DockPanel>
-                        <Slider x:Name="VideoDurationSlider" Minimum="5" Maximum="300" IsSnapToTickEnabled="True" TickFrequency="5" Margin="0,0,0,12" />
+                        <Slider x:Name="VideoDurationSlider" AutomationProperties.Name="Durée maximale d'une vidéo (secondes)" Minimum="5" Maximum="300" IsSnapToTickEnabled="True" TickFrequency="5" Margin="0,0,0,12" />
 
                         <DockPanel>
                             <TextBlock DockPanel.Dock="Right" Text="{Binding Value, ElementName=VolumeSlider, StringFormat={}{0:0} %}"
                                        Foreground="{StaticResource MutedTextBrush}" />
                             <TextBlock Text="Volume des vidéos" Style="{StaticResource LabelStyle}" />
                         </DockPanel>
-                        <Slider x:Name="VolumeSlider" Minimum="0" Maximum="100" IsSnapToTickEnabled="True" TickFrequency="1" Margin="0,0,0,12" />
+                        <Slider x:Name="VolumeSlider" AutomationProperties.Name="Volume des vidéos (%)" Minimum="0" Maximum="100" IsSnapToTickEnabled="True" TickFrequency="1" Margin="0,0,0,12" />
 
                         <DockPanel>
                             <TextBlock DockPanel.Dock="Right" Text="{Binding Value, ElementName=QueueSlider, StringFormat={}{0:0}}"
                                        Foreground="{StaticResource MutedTextBrush}" />
                             <TextBlock Text="Médias maximum en file d'attente" Style="{StaticResource LabelStyle}" />
                         </DockPanel>
-                        <Slider x:Name="QueueSlider" Minimum="1" Maximum="50" IsSnapToTickEnabled="True" TickFrequency="1" Margin="0,0,0,8" />
+                        <Slider x:Name="QueueSlider" AutomationProperties.Name="Médias maximum en file d'attente" Minimum="1" Maximum="50" IsSnapToTickEnabled="True" TickFrequency="1" Margin="0,0,0,8" />
 
                         <CheckBox x:Name="ShowMessageTextBox" Content="Afficher le texte du message en légende" />
                         <CheckBox x:Name="ShowTextOnlyBox" Content="Afficher aussi les messages sans média" />
@@ -108,17 +108,17 @@
                             </Grid.ColumnDefinitions>
                             <StackPanel>
                                 <TextBlock Text="STOP (vide la file)" Style="{StaticResource LabelStyle}" />
-                                <controls:HotkeyBox x:Name="StopHotkeyBox" Style="{StaticResource TextInputStyle}" />
+                                <controls:HotkeyBox x:Name="StopHotkeyBox" AutomationProperties.Name="Raccourci STOP" Style="{StaticResource TextInputStyle}" />
                             </StackPanel>
                             <StackPanel Grid.Column="2">
                                 <TextBlock Text="Passer au suivant" Style="{StaticResource LabelStyle}" />
-                                <controls:HotkeyBox x:Name="SkipHotkeyBox" Style="{StaticResource TextInputStyle}" />
+                                <controls:HotkeyBox x:Name="SkipHotkeyBox" AutomationProperties.Name="Raccourci Passer au suivant" Style="{StaticResource TextInputStyle}" />
                             </StackPanel>
                         </Grid>
 
                         <TextBlock Text="GÉNÉRAL" Style="{StaticResource SectionTitleStyle}" />
                         <CheckBox x:Name="StartWithWindowsBox" Content="Lancer LiveChat au démarrage de Windows" />
-                        <CheckBox x:Name="CheckUpdatesBox" Content="Rechercher les mises à jour au démarrage" />
+                        <CheckBox x:Name="CheckUpdatesBox" Content="Rechercher automatiquement les mises à jour" />
                     </StackPanel>
                 </ScrollViewer>
 

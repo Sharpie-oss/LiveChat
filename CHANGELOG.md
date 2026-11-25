@@ -1,5 +1,42 @@
 # Changelog
 
+## 2.0.3 — Mise à jour depuis la 2.0.1
+
+### Corrections de bugs
+
+- **Mise à jour bloquée depuis la 2.0.1** : après « Installer et redémarrer », l'ancienne version restait bloquée pendant sa fermeture, car elle chargeait une dépendance dans son exécutable déjà remplacé. La nouvelle version abandonnait au bout de 15 s et il fallait arrêter LiveChat dans le Gestionnaire des tâches. Désormais, la nouvelle version arrête l'ancienne instance du même dossier, retire son icône de notification, puis démarre. Depuis la 2.0.1, la mise à jour prend donc une quinzaine de secondes.
+
+### Améliorations
+
+- **Fenêtre de mise à jour** : les notes de version sont mises en forme (titres, puces) au lieu d'afficher le Markdown brut.
+- 1 nouveau test (112 au total).
+
+## 2.0.2 — Corrections et nouveautés issues des tests de bout en bout
+
+### Nouveautés
+
+- **Stickers** : les stickers PNG et GIF sont affichés. Les stickers APNG (animés) s'affichent sur leur première image, et les stickers Lottie ne sont pas pris en charge.
+- **Messages transférés** : un média transféré dans le salon (bouton « Transférer » de Discord) est affiché, avec le texte du message d'origine en légende.
+- **GIF longs** : un GIF plus long que la durée d'affichage des images est montré jusqu'au bout, comme les GIF Tenor, dans la limite de la durée maximale des vidéos.
+- **Mises à jour** : la recherche se fait au démarrage puis toutes les 6 heures, car LiveChat reste souvent ouvert plusieurs jours.
+- **Messages d'erreur plus précis** : un lien expiré, une image abîmée et une vidéo dont le codec manque sont maintenant distingués.
+- **Accessibilité** : les boutons de la fenêtre et les champs des paramètres ont un nom lisible par les lecteurs d'écran, et l'épingle fonctionne aussi au clavier.
+- `--preview SPOILER_fichier.png` affiche le média flouté, comme sur Discord.
+
+### Corrections de bugs
+
+- **WebM illisible** : le lecteur de WPF (moteur de Windows Media Player) refuse les fichiers `.webm`, même avec les extensions vidéo du Microsoft Store installées. Le WebM étant du Matroska, la vidéo téléchargée est maintenant enregistrée en `.mkv` et lue par le lecteur Matroska de Windows (VP8, VP9, son Opus).
+- **Volume à 100 %** : à partir de la deuxième vidéo, le volume réglé au maximum était ignoré et les vidéos étaient jouées à 50 %. Le volume transmis au lecteur est plafonné à 99 %, une différence inaudible.
+- **Statut après une coupure réseau** : quand Discord reprenait la session, l'indicateur restait sur « Connexion perdue, reconnexion en cours… » alors que tout refonctionnait.
+- **Nettoyage après une mise à jour** : au démarrage, tous les fichiers `*.old` du dossier de LiveChat *et de ses sous-dossiers* étaient supprimés, y compris ceux de l'utilisateur quand `LiveChat.exe` est lancé depuis Téléchargements ou le Bureau. Seules les sauvegardes créées par la mise à jour sont désormais supprimées.
+- **Fermeture pendant une mise à jour** : une fois l'exécutable remplacé, l'ancienne version ne pouvait plus charger ses dépendances (erreur sur `WpfAnimatedGif` dans le journal). Elles sont chargées avant le remplacement.
+
+### Technique
+
+- **Moitié moins de mémoire** : l'exécutable n'est plus compressé, donc les assemblies ne sont plus décompressées en mémoire au lancement. Au repos, LiveChat utilise 167 Mo au lieu de 322 Mo. En contrepartie, l'exe fait environ 155 Mo sur le disque (71 Mo auparavant) et l'archive de mise à jour passe de 63 à 65 Mo.
+- Les notes de release sont tirées de ce fichier (en français) : c'est ce texte qu'affiche la fenêtre de mise à jour, au lieu de la liste des pull requests générée par GitHub.
+- 22 nouveaux tests (111 au total).
+
 ## 2.0.1 — Lecture des vidéos
 
 ### Corrections de bugs

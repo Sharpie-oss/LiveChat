@@ -20,6 +20,9 @@ public sealed class UpdateService
     public const string ExecutableName = "LiveChat.exe";
     private const string BackupExtension = ".old";
 
+    /// <summary>Liste des sauvegardes .old créées par la dernière mise à jour (supprimées au démarrage suivant).</summary>
+    internal const string BackupManifestName = "LiveChat.update-backups.txt";
+
     public static Version CurrentVersion { get; } = Normalize(typeof(UpdateService).Assembly.GetName().Version ?? new Version(0, 0, 0));
 
     public static string ReleasesPageUrl => $"https://github.com/{Owner}/{Repository}/releases";
@@ -116,6 +119,29 @@ public sealed class UpdateService
         return true;
     }
 
+    /// <summary>
+    /// Notes de release (Markdown du CHANGELOG) en texte simple pour la fenêtre de mise à jour :
+    /// titres en capitales, puces « • », sans **gras**, `code` ni [liens](url).
+    /// </summary>
+    internal static string FormatReleaseNotes(string markdown)
+    {
+        var lines = markdown.Replace("\r\n", "\n").Split('\n').Select(line =>
+        {
+            var text = line.TrimEnd();
+            var heading = System.Text.RegularExpressions.Regex.Match(text, @"^\s*#{1,6}\s+(?<title>.+)$");
+            if (heading.Success)
+            {
+                text = heading.Groups["title"].Value.ToUpperInvariant();
+            }
+
+            text = System.Text.RegularExpressions.Regex.Replace(text, @"^(\s*)[-*]\s+", "$1• ");
+            text = System.Text.RegularExpressions.Regex.Replace(text, @"\[(?<label>[^\]]+)\]\([^)]+\)", "${label}");
+            return text.Replace("**", "").Replace("__", "").Replace("`", "");
+        });
+
+        return System.Text.RegularExpressions.Regex.Replace(string.Join("\n", lines), @"\n{3,}", "\n\n").Trim();
+    }
+
     /// <summary>Extrait le hash d'un fichier « &lt;sha256&gt;  &lt;nom&gt; » (format sha256sum).</summary>
     internal static string? ParseChecksum(string content)
     {
@@ -153,6 +179,7 @@ public sealed class UpdateService
             var payload = FindPayloadRoot(extracted)
                 ?? throw new InvalidDataException($"L'archive ne contient pas {ExecutableName}.");
 
+            PreloadAssemblies();
             ReplaceFiles(payload, AppPaths.AppDirectory);
             Log.Info($"Mise à jour {update.TagName} installée, redémarrage.");
 
@@ -168,22 +195,46 @@ public sealed class UpdateService
         }
     }
 
-    /// <summary>Supprime les fichiers .old laissés par la mise à jour précédente.</summary>
+    /// <summary>
+    /// Supprime les sauvegardes .old laissées par la mise à jour précédente, et elles seules : la v2.0.1 supprimait
+    /// tous les *.old du dossier et de ses sous-dossiers, ce qui pouvait effacer des fichiers de l'utilisateur
+    /// quand LiveChat.exe est lancé directement depuis Téléchargements ou le Bureau.
+    /// </summary>
     public static void CleanupPreviousUpdate(string? directory = null)
     {
         directory ??= AppPaths.AppDirectory;
+        var manifest = Path.Combine(directory, BackupManifestName);
         try
         {
-            foreach (var file in Directory.EnumerateFiles(directory, "*" + BackupExtension, SearchOption.AllDirectories))
+            // Les versions 2.0.0 et 2.0.1 n'écrivent pas de liste : leur seule sauvegarde est celle de l'exécutable.
+            var backups = new List<string> { ExecutableName + BackupExtension };
+            if (File.Exists(manifest))
             {
+                backups.AddRange(File.ReadAllLines(manifest));
+            }
+
+            var remaining = 0;
+            foreach (var relative in backups.Where(b => b.EndsWith(BackupExtension, StringComparison.OrdinalIgnoreCase)).Distinct())
+            {
+                var file = Path.GetFullPath(Path.Combine(directory, relative));
+                if (!IsInside(file, directory) || !File.Exists(file))
+                {
+                    continue;
+                }
+
                 try
                 {
                     File.Delete(file);
                 }
                 catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
                 {
-                    // Encore verrouillé : on réessaiera au prochain démarrage.
+                    remaining++; // Encore verrouillé : on réessaiera au prochain démarrage.
                 }
+            }
+
+            if (remaining == 0 && File.Exists(manifest))
+            {
+                File.Delete(manifest);
             }
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
@@ -223,6 +274,9 @@ public sealed class UpdateService
                 File.Copy(source, target);
                 created.Add(target);
             }
+
+            File.WriteAllLines(Path.Combine(targetDirectory, BackupManifestName),
+                backups.Select(b => Path.GetRelativePath(targetDirectory, b.Backup)));
         }
         catch
         {
@@ -283,6 +337,39 @@ public sealed class UpdateService
         return subdirectories.Length == 1 && File.Exists(Path.Combine(subdirectories[0], ExecutableName))
             ? subdirectories[0]
             : null;
+    }
+
+    private static bool IsInside(string path, string directory) =>
+        path.StartsWith(Path.TrimEndingDirectorySeparator(Path.GetFullPath(directory)) + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Charge toutes les dépendances avant de remplacer l'exécutable. Une application « fichier unique » lit ses
+    /// assemblies dans son propre .exe : une fois celui-ci remplacé, l'ancienne instance ne peut plus en charger de
+    /// nouvelles (en v2.0.0, la fermeture échouait sur WpfAnimatedGif quand aucun GIF n'avait été affiché).
+    /// </summary>
+    internal static void PreloadAssemblies()
+    {
+        var pending = new Stack<System.Reflection.Assembly>(AppDomain.CurrentDomain.GetAssemblies());
+        var seen = new HashSet<string>(pending.Select(a => a.GetName().Name ?? ""), StringComparer.OrdinalIgnoreCase);
+        while (pending.TryPop(out var assembly))
+        {
+            foreach (var reference in assembly.GetReferencedAssemblies())
+            {
+                if (reference.Name is null || !seen.Add(reference.Name))
+                {
+                    continue;
+                }
+
+                try
+                {
+                    pending.Push(System.Reflection.Assembly.Load(reference));
+                }
+                catch (Exception)
+                {
+                    // Référence facultative (autre plateforme...) : sans conséquence, la mise à jour continue.
+                }
+            }
+        }
     }
 
     private static bool IsTrue(JsonElement element, string property) =>
