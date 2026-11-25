@@ -152,7 +152,9 @@ public class UpdateServiceTests
 
         // Utilisée seulement pour les GIF : c'est elle qui manquait à la fermeture pendant la mise à jour.
         Assert.Contains(AppDomain.CurrentDomain.GetAssemblies(), a => a.GetName().Name == "WpfAnimatedGif");
-        Assert.True(stopwatch.Elapsed < TimeSpan.FromSeconds(5), $"Préchargement trop long : {stopwatch.Elapsed}.");
+        // Garde-fou contre un blocage seulement : 0,5 s en local, mais jusqu'à 10 s sur les machines partagées
+        // de la CI GitHub (un seuil de 5 s y faisait échouer le test de façon aléatoire).
+        Assert.True(stopwatch.Elapsed < TimeSpan.FromSeconds(60), $"Préchargement anormalement long : {stopwatch.Elapsed}.");
     }
 
     [Fact]
