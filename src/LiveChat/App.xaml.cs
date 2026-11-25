@@ -188,6 +188,14 @@ public partial class App : Application
         // (la v1 utilisait Dispatcher.Invoke, bloquant).
         _discord.StatusChanged += status => Dispatcher.InvokeAsync(() => OnDiscordStatus(status));
         _discord.MessageReceived += message => Dispatcher.InvokeAsync(() => OnDiscordMessage(message));
+        _discord.MessageRemoved += id => Dispatcher.InvokeAsync(() =>
+        {
+            var removed = _pip.RemoveMessage(id);
+            if (removed > 0)
+            {
+                Log.Info($"Message supprimé sur Discord : {removed} média(s) retiré(s) de l'affichage.");
+            }
+        });
         _discord.CommandReceived += command => Dispatcher.InvokeAsync(() =>
         {
             if (command == RemoteCommand.Skip)

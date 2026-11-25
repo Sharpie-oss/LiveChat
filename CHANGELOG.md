@@ -1,9 +1,10 @@
 # Changelog
 
-## 2.1.0 — Stickers animés, « Rejouer » et diagnostics
+## 2.1.0 — Stickers animés, modération, « Rejouer » et diagnostics
 
 ### Nouveautés
 
+- **Messages supprimés** : quand un message est supprimé sur Discord (par un modérateur, par exemple), ses médias sont retirés de la file d'attente, passés s'ils sont à l'écran et ne peuvent plus être rejoués. Avant, un média supprimé dans le salon restait affiché sur le stream.
 - **Stickers animés** : les PNG animés (APNG), format de la plupart des stickers Discord, s'animent au lieu de rester figés sur leur première image. Ils sont affichés jusqu'au bout de leur animation, comme les GIF.
 - **Rejouer le dernier média** : depuis le menu de l'icône de notification, ou avec un raccourci global à choisir dans les paramètres. Pratique en jeu quand on a manqué un média.
 - **Journal plus utile** : chaque message reçu avec un média ou un aperçu y est résumé (pièces jointes, types d'aperçus, nombre de médias affichés), pour comprendre pourquoi un lien ne s'est pas affiché.
@@ -20,7 +21,7 @@
 ### Technique
 
 - GitHub Actions : `actions/checkout@v7` et `actions/setup-dotnet@v6`, car Node.js 20 est déprécié.
-- 16 nouveaux tests (128 au total).
+- 18 nouveaux tests (130 au total).
 
 ## 2.0.3 — Mise à jour depuis la 2.0.1
 

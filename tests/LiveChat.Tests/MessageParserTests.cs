@@ -64,6 +64,12 @@ public class MessageParserTests
     }
 
     [Fact]
+    public void Parse_ItemsRememberTheirMessage() =>
+        // Permet de les retirer si le message est supprimé sur Discord.
+        Assert.All(MessageParser.Parse(Message("x", [new AttachmentInfo("https://cdn/a.png", "a.png", "image/png"),
+            new AttachmentInfo("https://cdn/b.png", "b.png", "image/png")]), Defaults), i => Assert.Equal(1UL, i.MessageId));
+
+    [Fact]
     public void Parse_CaptionDisabled_NoCaption()
     {
         var message = Message("Texte", [new AttachmentInfo("https://cdn/a.png", "a.png", "image/png")]);

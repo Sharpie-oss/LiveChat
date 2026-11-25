@@ -161,6 +161,34 @@ public partial class PipWindow : Window
         return true;
     }
 
+    /// <summary>
+    /// Message supprimé sur Discord (par un modérateur, par exemple) : ses médias sont retirés de la file, passés
+    /// s'ils sont à l'écran, et ne peuvent plus être rejoués.
+    /// </summary>
+    /// <returns>Nombre de médias retirés.</returns>
+    public int RemoveMessage(ulong messageId)
+    {
+        if (messageId == 0)
+        {
+            return 0;
+        }
+
+        var removed = _queue.RemoveWhere(i => i.MessageId == messageId);
+        if (_lastPresented?.MessageId == messageId)
+        {
+            _lastPresented = null;
+        }
+
+        if (_current?.MessageId == messageId)
+        {
+            removed++;
+            Skip();
+        }
+
+        UpdateQueueBadge();
+        return removed;
+    }
+
     /// <summary>Passe au média suivant.</summary>
     public void Skip()
     {

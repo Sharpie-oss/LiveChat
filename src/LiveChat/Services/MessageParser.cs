@@ -63,7 +63,7 @@ public static partial class MessageParser
         }
 
         // Une même URL peut apparaître à la fois en pièce jointe et en embed.
-        items = items.DistinctBy(i => i.Url).ToList();
+        items = items.DistinctBy(i => i.Url).Select(i => i with { MessageId = message.Id }).ToList();
 
         if (items.Count > 0)
         {
@@ -81,7 +81,7 @@ public static partial class MessageParser
             var text = Clean(message.Content, options.BlurSpoilers, MaxTextLength);
             if (text is not null)
             {
-                return [new MediaItem(MediaKind.Text, message.Author) { Text = text, AvatarUrl = message.AvatarUrl }];
+                return [new MediaItem(MediaKind.Text, message.Author) { Text = text, AvatarUrl = message.AvatarUrl, MessageId = message.Id }];
             }
         }
 

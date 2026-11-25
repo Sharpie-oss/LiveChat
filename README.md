@@ -12,6 +12,7 @@ LiveChat affiche **en incrustation, par-dessus vos jeux et applications**, les i
 - **Raccourcis clavier globaux**, actifs même en jeu : **STOP** (arrête et vide la file, touche `Pause` par défaut), **Passer** et **Rejouer** (réaffiche le dernier média).
 - **Commandes slash** `/caption`, `/skip` et `/stop`. Les deux dernières sont réservées aux membres qui peuvent gérer les messages.
 - **Spoilers** floutés, avec un clic pour les dévoiler.
+- **Modération** : un message supprimé sur Discord disparaît aussi de LiveChat (file d'attente, affichage en cours, « Rejouer »).
 - **Discrétion** : la fenêtre ne vole pas le focus de votre jeu, n'apparaît pas dans Alt+Tab et se masque automatiquement quand il n'y a rien à afficher. Vous pouvez aussi l'épingler.
 - **Volume** réglable avec la molette de la souris sur la fenêtre ou avec le bouton dédié. Il est mémorisé, comme la position et la taille de la fenêtre.
 - **Mise en pause** de la réception depuis l'icône de notification.

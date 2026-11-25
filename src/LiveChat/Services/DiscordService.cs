@@ -54,6 +54,9 @@ public sealed class DiscordService : IAsyncDisposable
 
     public event Action<RemoteCommand>? CommandReceived;
 
+    /// <summary>Message du salon supprimé (identifiant) : ses médias ne doivent plus être affichés.</summary>
+    public event Action<ulong>? MessageRemoved;
+
     public ConnectionStatus Status { get; private set; } = new(ConnectionState.Disconnected, "Non connecté");
 
     /// <summary>Nom lisible du salon surveillé (#salon · Serveur), connu une fois connecté.</summary>
@@ -184,6 +187,8 @@ public sealed class DiscordService : IAsyncDisposable
         client.Disconnected += ex => OnDisconnected(client, ex);
         client.MessageReceived += message => OnMessageReceived(client, message);
         client.MessageUpdated += (_, message, channel) => OnMessageUpdated(client, message, channel);
+        client.MessageDeleted += (message, channel) => OnMessagesDeleted(client, [message.Id], channel.Id);
+        client.MessagesBulkDeleted += (messages, channel) => OnMessagesDeleted(client, messages.Select(m => m.Id), channel.Id);
         client.SlashCommandExecuted += command => OnSlashCommandAsync(client, command);
         return client;
     }
@@ -374,6 +379,19 @@ public sealed class DiscordService : IAsyncDisposable
         if (MarkEmbedsHandled(message.Id))
         {
             MessageReceived?.Invoke(ToIncoming(message, embedsOnly: true));
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private Task OnMessagesDeleted(DiscordSocketClient client, IEnumerable<ulong> messageIds, ulong channelId)
+    {
+        if (IsCurrent(client) && channelId == _channelId)
+        {
+            foreach (var id in messageIds)
+            {
+                MessageRemoved?.Invoke(id);
+            }
         }
 
         return Task.CompletedTask;
