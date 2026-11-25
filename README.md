@@ -1,6 +1,6 @@
 # LiveChat
 
-LiveChat affiche **en incrustation, par-dessus vos jeux et applications**, les images, GIF et vidéos postés dans un salon Discord. C'est pratique pour un stream, une soirée entre amis ou un écran partagé : chacun poste un média dans le salon et il apparaît dans une petite fenêtre toujours visible.
+LiveChat affiche **en incrustation, par-dessus vos jeux et applications**, les images, GIF, vidéos et sons postés dans un salon Discord. C'est pratique pour un stream, une soirée entre amis ou un écran partagé : chacun poste un média dans le salon et il apparaît dans une petite fenêtre toujours visible.
 
 ![Icône](src/LiveChat/Assets/LiveChat.png)
 
@@ -103,7 +103,8 @@ src/LiveChat/
   App.xaml(.cs)          Point d'entrée et orchestration
   Configuration/         Paramètres, stockage chiffré, validation, raccourcis
   Models/                Messages entrants et médias à afficher
-  Services/              Discord, analyse des messages, file d'attente, mises à jour, raccourcis globaux
+  Services/              Discord, analyse des messages, file d'attente, mises à jour, raccourcis globaux,
+                         animations (APNG, WebP), conversion des messages vocaux (Ogg Opus → Matroska)
   Views/                 Fenêtres WPF (incrustation, paramètres, mise à jour)
   Controls/              Champ de capture de raccourci
   Tray/                  Icône de la zone de notification
@@ -113,11 +114,11 @@ tests/LiveChat.Tests/    Tests unitaires (xUnit)
 
 ### Publier une version
 
-La CI (`.github/workflows/ci.yml`) compile et teste chaque push. Pour publier une version :
+La CI (`.github/workflows/ci.yml`) compile et teste chaque push. Pour publier une version, ajoutez sa section `## X.Y.Z` dans [CHANGELOG.md](CHANGELOG.md) (elle devient les notes de la release, affichées dans la fenêtre de mise à jour), mettez à jour `<Version>` dans `LiveChat.csproj`, puis :
 
 ```powershell
-git tag v2.0.0
-git push origin v2.0.0
+git tag v2.2.1
+git push origin v2.2.1
 ```
 
 Le workflow `release.yml` publie alors `LiveChat-win-x64.zip` (un seul exécutable autonome non compressé d'environ 155 Mo, soit une archive d'environ 65 Mo) et sa somme SHA-256 dans une release GitHub. C'est cette archive qu'utilise la mise à jour automatique.
