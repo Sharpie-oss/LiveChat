@@ -117,6 +117,6 @@ git tag v2.0.0
 git push origin v2.0.0
 ```
 
-Le workflow `release.yml` publie alors `LiveChat-win-x64.zip` (un seul exécutable autonome non compressé d'environ 155 Mo, soit une archive d'environ 63 Mo) et sa somme SHA-256 dans une release GitHub. C'est cette archive qu'utilise la mise à jour automatique.
+Le workflow `release.yml` publie alors `LiveChat-win-x64.zip` (un seul exécutable autonome non compressé d'environ 155 Mo, soit une archive d'environ 65 Mo) et sa somme SHA-256 dans une release GitHub. C'est cette archive qu'utilise la mise à jour automatique.
 
 Voir [CHANGELOG.md](CHANGELOG.md) pour l'historique des versions.

@@ -22,7 +22,7 @@
 
 ### Technique
 
-- **Moitié moins de mémoire** : l'exécutable n'est plus compressé, donc les assemblies ne sont plus décompressées en mémoire au lancement. Au repos, LiveChat utilise 167 Mo au lieu de 322 Mo. L'exe fait environ 155 Mo sur le disque, mais l'archive de mise à jour est un peu plus petite (63 Mo au lieu de 66 Mo).
+- **Moitié moins de mémoire** : l'exécutable n'est plus compressé, donc les assemblies ne sont plus décompressées en mémoire au lancement. Au repos, LiveChat utilise 167 Mo au lieu de 322 Mo. En contrepartie, l'exe fait environ 155 Mo sur le disque (71 Mo auparavant) et l'archive de mise à jour passe de 63 à 65 Mo.
 - Les notes de release sont tirées de ce fichier (en français) : c'est ce texte qu'affiche la fenêtre de mise à jour, au lieu de la liste des pull requests générée par GitHub.
 - 22 nouveaux tests (111 au total).
 
