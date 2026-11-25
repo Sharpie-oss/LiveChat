@@ -116,6 +116,18 @@
                             </StackPanel>
                         </Grid>
 
+                        <Grid Margin="0,10,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="14" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="Rejouer le dernier média" Style="{StaticResource LabelStyle}" />
+                                <controls:HotkeyBox x:Name="ReplayHotkeyBox" AutomationProperties.Name="Raccourci Rejouer le dernier média" Style="{StaticResource TextInputStyle}" />
+                            </StackPanel>
+                        </Grid>
+
                         <TextBlock Text="GÉNÉRAL" Style="{StaticResource SectionTitleStyle}" />
                         <CheckBox x:Name="StartWithWindowsBox" Content="Lancer LiveChat au démarrage de Windows" />
                         <CheckBox x:Name="CheckUpdatesBox" Content="Rechercher automatiquement les mises à jour" />

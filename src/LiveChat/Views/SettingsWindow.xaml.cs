@@ -31,6 +31,15 @@ public partial class SettingsWindow : Window
             : "Un token est déjà enregistré (chiffré). Laissez vide pour le conserver.";
         ChannelBox.Text = current.ChannelId == 0 ? "" : current.ChannelId.ToString();
 
+        // Bornes identiques à celles des paramètres : avant, une valeur plus haute que le curseur (60 s d'image,
+        // 600 s de vidéo, 100 médias) était silencieusement réduite au premier enregistrement.
+        ImageDurationSlider.Minimum = AppSettings.MinImageDuration;
+        ImageDurationSlider.Maximum = AppSettings.MaxImageDuration;
+        VideoDurationSlider.Minimum = AppSettings.MinVideoDuration;
+        VideoDurationSlider.Maximum = AppSettings.MaxVideoDuration;
+        QueueSlider.Minimum = AppSettings.MinQueueLength;
+        QueueSlider.Maximum = AppSettings.MaxQueueLengthLimit;
+
         ImageDurationSlider.Value = current.ImageDurationSeconds;
         VideoDurationSlider.Value = current.MaxVideoDurationSeconds;
         VolumeSlider.Value = Math.Round(current.Volume * 100);
@@ -45,6 +54,7 @@ public partial class SettingsWindow : Window
 
         StopHotkeyBox.Hotkey = current.StopHotkey;
         SkipHotkeyBox.Hotkey = current.SkipHotkey;
+        ReplayHotkeyBox.Hotkey = current.ReplayHotkey;
 
         if (!string.IsNullOrWhiteSpace(message))
         {
@@ -92,9 +102,10 @@ public partial class SettingsWindow : Window
             return;
         }
 
-        if (StopHotkeyBox.Hotkey is not null && StopHotkeyBox.Hotkey == SkipHotkeyBox.Hotkey)
+        var hotkeys = new[] { StopHotkeyBox.Hotkey, SkipHotkeyBox.Hotkey, ReplayHotkeyBox.Hotkey }.OfType<Hotkey>().ToList();
+        if (hotkeys.Count != hotkeys.Distinct().Count())
         {
-            ShowError("Les raccourcis STOP et Passer doivent être différents.");
+            ShowError("Les raccourcis STOP, Passer et Rejouer doivent être différents.");
             return;
         }
 
@@ -113,6 +124,7 @@ public partial class SettingsWindow : Window
         settings.CheckForUpdates = CheckUpdatesBox.IsChecked == true;
         settings.StopHotkey = StopHotkeyBox.Hotkey;
         settings.SkipHotkey = SkipHotkeyBox.Hotkey;
+        settings.ReplayHotkey = ReplayHotkeyBox.Hotkey;
         settings.Normalize();
 
         Result = settings;

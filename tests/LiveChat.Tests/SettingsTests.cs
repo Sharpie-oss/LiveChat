@@ -44,6 +44,7 @@ public sealed class SettingsTests : IDisposable
 
         Assert.DoesNotContain("secret-token", json);
         Assert.Contains("\"Alt, Control\"", json); // Énumérations lisibles dans le fichier.
+        Assert.DoesNotContain("IsValidGlobalHotkey", json); // Propriété calculée, pas une donnée.
         Assert.Equal("MTIzNDU2Nzg5.secret-token", loaded.BotToken);
         Assert.Equal(123456789012345678UL, loaded.ChannelId);
         Assert.Equal(0.8, loaded.Volume);
@@ -137,6 +138,21 @@ public sealed class SettingsTests : IDisposable
     [InlineData(ModifierKeys.Alt, Key.LeftCtrl, false)]
     public void Hotkey_IsValidGlobalHotkey(ModifierKeys modifiers, Key key, bool expected) =>
         Assert.Equal(expected, new Hotkey(modifiers, key).IsValidGlobalHotkey);
+
+    [Fact]
+    public void Normalize_DropsReplayHotkeyDuplicatingAnotherOne()
+    {
+        var pause = new Hotkey(ModifierKeys.None, Key.Pause);
+        var f9 = new Hotkey(ModifierKeys.None, Key.F9);
+        var duplicate = new AppSettings { StopHotkey = pause, ReplayHotkey = pause };
+        var distinct = new AppSettings { StopHotkey = pause, SkipHotkey = f9, ReplayHotkey = new Hotkey(ModifierKeys.Control, Key.R) };
+
+        duplicate.Normalize();
+        distinct.Normalize();
+
+        Assert.Null(duplicate.ReplayHotkey);
+        Assert.NotNull(distinct.ReplayHotkey);
+    }
 
     [Fact]
     public void Hotkey_ToString_IsReadable()

@@ -57,6 +57,9 @@ public sealed class AppSettings
 
     public Hotkey? SkipHotkey { get; set; }
 
+    /// <summary>Réaffiche le dernier média (pratique en jeu quand on l'a manqué).</summary>
+    public Hotkey? ReplayHotkey { get; set; }
+
     public WindowPlacement? Window { get; set; }
 
     [JsonIgnore]
@@ -80,6 +83,11 @@ public sealed class AppSettings
         if (SkipHotkey is { IsValidGlobalHotkey: false } || SkipHotkey == StopHotkey)
         {
             SkipHotkey = null;
+        }
+
+        if (ReplayHotkey is { IsValidGlobalHotkey: false } || ReplayHotkey == StopHotkey || ReplayHotkey == SkipHotkey)
+        {
+            ReplayHotkey = null;
         }
 
         if (Window is { } w && !(w.Width > 0 && w.Height > 0 && double.IsFinite(w.Left) && double.IsFinite(w.Top)))

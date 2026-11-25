@@ -169,6 +169,7 @@ public partial class App : Application
         _tray = new TrayIcon(LoadTrayIcon());
         _tray.ToggleWindowRequested += () => _pip.ToggleWindow();
         _tray.SkipRequested += () => _pip.Skip();
+        _tray.ReplayRequested += ReplayLast;
         _tray.StopRequested += () => _pip.StopAll();
         _tray.PauseToggled += SetPaused;
         _tray.TestRequested += () => _pip.Enqueue([TestCard.Create()]);
@@ -256,6 +257,11 @@ public partial class App : Application
 
         var options = new ParserOptions(_settings.ShowMessageText, _settings.ShowTextOnlyMessages, _settings.BlurSpoilers);
         var items = MessageParser.Parse(message, options);
+        if (MessageParser.Describe(message, items) is { } summary)
+        {
+            Log.Info(summary); // Pour comprendre pourquoi un média ne s'est pas affiché.
+        }
+
         if (items.Count > 0)
         {
             _pip.Enqueue(items);
@@ -346,11 +352,24 @@ public partial class App : Application
             failures.Add($"Passer ({skip})");
         }
 
+        if (_settings.ReplayHotkey is { } replay && !_hotkeys.Register(replay, ReplayLast))
+        {
+            failures.Add($"Rejouer ({replay})");
+        }
+
         if (failures.Count > 0)
         {
             _tray.Notify("Raccourci indisponible",
                 $"{string.Join(", ", failures)} : déjà utilisé par une autre application. Choisissez-en un autre dans les paramètres.",
                 Forms.ToolTipIcon.Warning, () => ShowSettings(firstRun: false));
+        }
+    }
+
+    private void ReplayLast()
+    {
+        if (!_pip.Replay())
+        {
+            _tray.Notify("Rien à rejouer", "Aucun média n'a encore été affiché depuis le lancement de LiveChat.");
         }
     }
 

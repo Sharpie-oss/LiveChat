@@ -166,6 +166,21 @@ public class MessageParserTests
     }
 
     [Fact]
+    public void Describe_SummarizesWhatWasReceivedAndShown()
+    {
+        var message = Message("Regardez", [new AttachmentInfo("https://cdn/a.png", "a.png", "image/png")],
+            [new EmbedInfo("Video", "https://youtube.com/watch?v=1", null, null, "https://www.youtube.com/embed/1", HasProvider: true)]);
+
+        var summary = MessageParser.Describe(message, MessageParser.Parse(message, Defaults));
+
+        Assert.Equal("Message de Alice : 1 pièce jointe (a.png), 1 aperçu (video) → 1 média affiché.", summary);
+    }
+
+    [Fact]
+    public void Describe_TextOnlyMessage_IsNotLogged() =>
+        Assert.Null(MessageParser.Describe(Message("Bonjour"), []));
+
+    [Fact]
     public void Parse_Stickers_AreShownAsImages()
     {
         var message = Message() with
@@ -216,6 +231,12 @@ public class MessageParserTests
     [InlineData("voir <https://example.com> ok", "voir ok")]
     [InlineData("https://example.com", null)]
     [InlineData("   ", null)]
+    [InlineData("[clique ici](https://example.com/page) !", "clique ici !")]
+    [InlineData("> une citation\nla réponse", "une citation la réponse")]
+    [InlineData("*italique* et _aussi_", "italique et aussi")]
+    [InlineData("***gras italique***", "gras italique")]
+    [InlineData("nom_de_fichier.txt et 2*3*4", "nom_de_fichier.txt et 2*3*4")]
+    [InlineData("Salut <@123456789012345678> dans <#123456789012345678> à <t:1764000000:R>", "Salut dans à")]
     public void Clean_NormalizesDiscordMarkup(string input, string? expected) =>
         Assert.Equal(expected, MessageParser.Clean(input, hideSpoilers: true, MessageParser.MaxCaptionLength));
 

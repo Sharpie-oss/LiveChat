@@ -491,7 +491,7 @@ public sealed class DiscordService : IAsyncDisposable
     {
         try
         {
-            var commands = new ApplicationCommandProperties[]
+            var commands = new SlashCommandProperties[]
             {
                 new SlashCommandBuilder()
                     .WithName("caption")
@@ -511,8 +511,20 @@ public sealed class DiscordService : IAsyncDisposable
                     .Build(),
             };
 
-            // Commandes de serveur : disponibles immédiatement, et « bulk overwrite » est idempotent.
-            await guild.BulkOverwriteApplicationCommandAsync(commands);
+            // Commandes de serveur : disponibles immédiatement. Elles ne changent qu'avec une nouvelle version :
+            // on ne les réécrit que si nécessaire (Discord limite ces appels, et chaque relance de LiveChat
+            // déclenchait « Rate limit triggered » dans le journal).
+            var existing = await guild.GetApplicationCommandsAsync();
+            if (CommandShape.Signature(existing.Where(c => c.Type == ApplicationCommandType.Slash).Select(CommandShape.From))
+                == CommandShape.Signature(commands.Select(CommandShape.From)))
+            {
+                Log.Info($"Commandes slash déjà à jour sur le serveur {guild.Name}.");
+            }
+            else
+            {
+                await guild.BulkOverwriteApplicationCommandAsync(commands);
+                Log.Info($"Commandes slash enregistrées sur le serveur {guild.Name}.");
+            }
 
             // La v1 enregistrait /caption en commande globale à chaque connexion : on la supprime.
             foreach (var legacy in (await client.GetGlobalApplicationCommandsAsync()).Where(c => c.Name == "caption"))
@@ -521,7 +533,6 @@ public sealed class DiscordService : IAsyncDisposable
             }
 
             _commandsRegistered = true;
-            Log.Info($"Commandes slash enregistrées sur le serveur {guild.Name}.");
         }
         catch (Exception ex)
         {

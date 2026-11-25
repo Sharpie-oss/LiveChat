@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using System.Windows.Input;
 
 namespace LiveChat.Configuration;
@@ -9,6 +10,7 @@ public sealed record Hotkey(ModifierKeys Modifiers, Key Key)
     /// Un raccourci global sans modificateur n'est accepté que pour les touches rarement utilisées
     /// en saisie (F1-F24, Pause, Arrêt défil, Inser) afin de ne pas « voler » la frappe au clavier.
     /// </summary>
+    [JsonIgnore] // Propriété calculée : elle n'a pas sa place dans settings.json.
     public bool IsValidGlobalHotkey
     {
         get
