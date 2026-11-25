@@ -119,6 +119,29 @@ public sealed class UpdateService
         return true;
     }
 
+    /// <summary>
+    /// Notes de release (Markdown du CHANGELOG) en texte simple pour la fenêtre de mise à jour :
+    /// titres en capitales, puces « • », sans **gras**, `code` ni [liens](url).
+    /// </summary>
+    internal static string FormatReleaseNotes(string markdown)
+    {
+        var lines = markdown.Replace("\r\n", "\n").Split('\n').Select(line =>
+        {
+            var text = line.TrimEnd();
+            var heading = System.Text.RegularExpressions.Regex.Match(text, @"^\s*#{1,6}\s+(?<title>.+)$");
+            if (heading.Success)
+            {
+                text = heading.Groups["title"].Value.ToUpperInvariant();
+            }
+
+            text = System.Text.RegularExpressions.Regex.Replace(text, @"^(\s*)[-*]\s+", "$1• ");
+            text = System.Text.RegularExpressions.Regex.Replace(text, @"\[(?<label>[^\]]+)\]\([^)]+\)", "${label}");
+            return text.Replace("**", "").Replace("__", "").Replace("`", "");
+        });
+
+        return System.Text.RegularExpressions.Regex.Replace(string.Join("\n", lines), @"\n{3,}", "\n\n").Trim();
+    }
+
     /// <summary>Extrait le hash d'un fichier « &lt;sha256&gt;  &lt;nom&gt; » (format sha256sum).</summary>
     internal static string? ParseChecksum(string content)
     {

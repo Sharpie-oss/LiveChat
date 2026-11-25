@@ -134,6 +134,16 @@ public class UpdateServiceTests
     }
 
     [Fact]
+    public void FormatReleaseNotes_RendersChangelogMarkdownAsPlainText()
+    {
+        const string markdown = "### Nouveautés\r\n\r\n- **Stickers** : affichés (`PNG`, GIF).\r\n- Voir [la release](https://github.com/o/r).\r\n\r\n\r\n\r\n### Corrections de bugs\r\n\r\n* **WebM** : lu.";
+
+        Assert.Equal(
+            "NOUVEAUTÉS\n\n• Stickers : affichés (PNG, GIF).\n• Voir la release.\n\nCORRECTIONS DE BUGS\n\n• WebM : lu.",
+            UpdateService.FormatReleaseNotes(markdown));
+    }
+
+    [Fact]
     public void PreloadAssemblies_LoadsLazyDependenciesQuickly()
     {
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();

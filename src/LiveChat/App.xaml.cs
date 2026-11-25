@@ -500,6 +500,19 @@ public partial class App : Application
             acquired = true;
         }
 
+        // L'ancienne version ne s'est pas fermée (bloquée pendant sa fermeture) : on l'arrête pour pouvoir démarrer.
+        if (!acquired && waitForPreviousInstance && PreviousInstance.TerminateStuck(AppPaths.AppDirectory))
+        {
+            try
+            {
+                acquired = _instanceMutex.WaitOne(TimeSpan.FromSeconds(5));
+            }
+            catch (AbandonedMutexException)
+            {
+                acquired = true;
+            }
+        }
+
         if (!acquired)
         {
             _instanceMutex.Dispose();
