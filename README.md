@@ -6,7 +6,7 @@ LiveChat affiche **en incrustation, par-dessus vos jeux et applications**, les i
 
 ## Fonctionnalités
 
-- **Images, GIF animés, vidéos, stickers** (pièces jointes, liens directs, GIF du sélecteur de Discord — Klipy, Tenor, Giphy —, images des aperçus de liens, messages transférés).
+- **Images, GIF animés, vidéos, sons, messages vocaux, stickers** (pièces jointes, liens directs, GIF du sélecteur de Discord — Klipy, Tenor, Giphy —, images des aperçus de liens, messages transférés).
 - **File d'attente** : les médias s'affichent l'un après l'autre, avec une barre de progression et un badge `+N` pour les médias en attente. La file est limitée, pour se protéger du spam.
 - **Légendes** : le texte du message s'affiche par-dessus le média. La commande `/caption` permet d'envoyer un média avec une légende.
 - **Raccourcis clavier globaux**, actifs même en jeu : **STOP** (arrête et vide la file, touche `Pause` par défaut), **Passer** et **Rejouer** (réaffiche le dernier média).
@@ -72,9 +72,10 @@ LiveChat est **autonome** : un seul `LiveChat.exe` (Windows 10/11 64 bits), sans
 
 ## Formats pris en charge
 
-- **Images** : PNG, JPEG, BMP, TIFF, WebP (codec WebP de Windows), GIF animé. Un GIF plus long que la durée d'affichage est montré jusqu'au bout.
+- **Images** : PNG et APNG, JPEG, BMP, TIFF, WebP et WebP animé (codec WebP de Windows), GIF animé. Une animation plus longue que la durée d'affichage est montrée jusqu'au bout.
 - **Stickers** : PNG, APNG (animés) et GIF ; les stickers Lottie (animations vectorielles) ne sont pas pris en charge.
 - **Vidéos** : MP4 (H.264), MOV, WebM (VP8, VP9), MKV, WMV, AVI. Le WebM utilise les décodeurs VP8/VP9 de Windows (« Extensions vidéo VP9 », généralement préinstallées sur Windows 10 et 11) ; l'AV1 et le HEVC demandent leur extension du Microsoft Store. Une vidéo illisible affiche la raison pendant 4 s, puis LiveChat passe au média suivant.
+- **Sons** : MP3, WAV, M4A, AAC, FLAC, WMA, et les messages vocaux Discord (Ogg Opus, convertis en Matroska sans réencodage). L'Ogg Vorbis n'est pas pris en charge. La lecture des sons peut être désactivée dans les paramètres.
 - Les liens YouTube, Twitch, etc. ne sont pas lus : ce ne sont pas des fichiers vidéo.
 - Un lien n'est affiché que si Discord en génère un aperçu. Un lien mort, ou placé entre `||barres de spoiler||`, n'a pas d'aperçu : il n'est donc pas affiché. Pour un média en spoiler, envoyez le fichier en cochant « Marquer comme spoiler ».
 - La fenêtre reste au premier plan au-dessus des jeux en *plein écran fenêtré* (borderless). Les jeux en plein écran exclusif la masquent.

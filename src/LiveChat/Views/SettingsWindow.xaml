@@ -72,9 +72,9 @@
                         <DockPanel>
                             <TextBlock DockPanel.Dock="Right" Text="{Binding Value, ElementName=VideoDurationSlider, StringFormat={}{0:0} s}"
                                        Foreground="{StaticResource MutedTextBrush}" />
-                            <TextBlock Text="Durée maximale d'une vidéo" Style="{StaticResource LabelStyle}" />
+                            <TextBlock Text="Durée maximale d'une vidéo ou d'un son" Style="{StaticResource LabelStyle}" />
                         </DockPanel>
-                        <Slider x:Name="VideoDurationSlider" AutomationProperties.Name="Durée maximale d'une vidéo (secondes)" Minimum="5" Maximum="300" IsSnapToTickEnabled="True" TickFrequency="5" Margin="0,0,0,12" />
+                        <Slider x:Name="VideoDurationSlider" AutomationProperties.Name="Durée maximale d'une vidéo ou d'un son (secondes)" Minimum="5" Maximum="300" IsSnapToTickEnabled="True" TickFrequency="5" Margin="0,0,0,12" />
 
                         <DockPanel>
                             <TextBlock DockPanel.Dock="Right" Text="{Binding Value, ElementName=VolumeSlider, StringFormat={}{0:0} %}"
@@ -93,6 +93,7 @@
                         <CheckBox x:Name="ShowMessageTextBox" Content="Afficher le texte du message en légende" />
                         <CheckBox x:Name="ShowTextOnlyBox" Content="Afficher aussi les messages sans média" />
                         <CheckBox x:Name="BlurSpoilersBox" Content="Flouter les médias marqués spoiler (clic pour dévoiler)" />
+                        <CheckBox x:Name="PlayAudioBox" Content="Lire les sons et les messages vocaux" />
                         <CheckBox x:Name="KeepVisibleBox" Content="Garder la fenêtre visible même sans média" />
 
                         <TextBlock Text="RACCOURCIS GLOBAUX" Style="{StaticResource SectionTitleStyle}" />

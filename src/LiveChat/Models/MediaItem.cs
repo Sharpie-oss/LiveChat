@@ -14,6 +14,9 @@ public enum MediaKind
     /// <summary>Vidéo courte sans son jouée en boucle (GIF Tenor/Giphy).</summary>
     LoopingVideo,
 
+    /// <summary>Son (MP3, WAV, M4A, OGG...), y compris les messages vocaux de Discord.</summary>
+    Audio,
+
     /// <summary>Message texte sans média.</summary>
     Text,
 

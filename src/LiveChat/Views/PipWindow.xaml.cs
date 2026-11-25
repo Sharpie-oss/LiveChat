@@ -362,6 +362,7 @@ public partial class PipWindow : Window
 
                 case MediaKind.Video:
                 case MediaKind.LoopingVideo:
+                case MediaKind.Audio:
                     var videoCts = _loadCts = new CancellationTokenSource();
                     var source = await PrepareVideoAsync(item, id, videoCts.Token);
                     if (id != _presentationId)
@@ -447,6 +448,30 @@ public partial class PipWindow : Window
     /// </summary>
     private async Task<string> PrepareVideoAsync(MediaItem item, int id, CancellationToken cancellationToken)
     {
+        var path = await FetchMediaFileAsync(item, id, cancellationToken);
+
+        // Ogg Opus (messages vocaux Discord) : le lecteur de WPF refuse le conteneur Ogg, mais lit l'Opus
+        // dans un fichier Matroska. Conversion sans réencodage ; un Ogg Vorbis reste illisible.
+        if (OggOpus.IsOggExtension(VideoCache.GetExtension(item.Url!)))
+        {
+            var converted = VideoCache.CreateTempPath("son.mkv");
+            if (await Task.Run(() => OggOpus.TryRemux(path, converted), cancellationToken))
+            {
+                if (VideoCache.IsTemporary(path))
+                {
+                    VideoCache.TryDelete(path);
+                }
+
+                _tempVideoPath = converted;
+                return converted;
+            }
+        }
+
+        return path;
+    }
+
+    private async Task<string> FetchMediaFileAsync(MediaItem item, int id, CancellationToken cancellationToken)
+    {
         var uri = new Uri(item.Url!, UriKind.Absolute);
         if (uri.IsFile)
         {
@@ -461,7 +486,9 @@ public partial class PipWindow : Window
             return copy;
         }
 
+        var what = item.Kind == MediaKind.Audio ? "du son" : "de la vidéo";
         var loading = CreateLoadingText();
+        loading.Text = $"Chargement {what}…";
         MediaHost.Children.Add(loading);
         SetProgress(0, visible: true);
 
@@ -472,7 +499,7 @@ public partial class PipWindow : Window
             if (id == _presentationId)
             {
                 SetProgress(value, visible: true);
-                loading.Text = $"Chargement de la vidéo… {value:P0}";
+                loading.Text = $"Chargement {what}… {value:P0}";
             }
         });
 
@@ -520,7 +547,8 @@ public partial class PipWindow : Window
             {
                 Log.Warn($"Lecture impossible de {item.Url}.", e.ErrorException);
                 var format = VideoCache.GetExtension(item.Url!).TrimStart('.').ToUpperInvariant();
-                ShowError(id, $"Vidéo illisible ({format}) : fichier abîmé ou codec non pris en charge par Windows.");
+                var what = item.Kind == MediaKind.Audio ? "Son illisible" : "Vidéo illisible";
+                ShowError(id, $"{what} ({format}) : fichier abîmé ou codec non pris en charge par Windows.");
             }
         };
         video.Loaded += (_, _) =>
@@ -535,6 +563,14 @@ public partial class PipWindow : Window
         video.Source = new Uri(localPath, UriKind.Absolute);
         _video = video;
         MediaHost.Children.Add(video);
+
+        if (item.Kind == MediaKind.Audio)
+        {
+            // Un son n'a pas d'image : carte avec une icône et le nom du fichier (« Message vocal » pour Discord).
+            video.Width = video.Height = 0;
+            var voice = item.FileName?.StartsWith("voice-message", StringComparison.OrdinalIgnoreCase) == true;
+            MediaHost.Children.Add(CreateAudioCard(voice ? "" : "", voice ? "Message vocal" : item.FileName ?? "Son"));
+        }
 
         _mode = PlaybackMode.Video;
         _startedAt = DateTime.UtcNow;
@@ -733,8 +769,8 @@ public partial class PipWindow : Window
         else
         {
             // Décodage hors du thread de l'interface pour ne pas la figer sur les grosses images.
-            // Les PNG animés (APNG, la plupart des stickers Discord) sont animés au lieu d'être figés.
-            var frames = await Task.Run(() => Apng.IsAnimated(data) ? Apng.Decode(data) : null, cancellationToken);
+            // PNG animés (APNG, la plupart des stickers Discord) et WebP animés : animés au lieu d'être figés.
+            var frames = await Task.Run(() => AnimatedImages.TryDecode(data), cancellationToken);
             if (frames is not null)
             {
                 animationLength = Animate(image, frames);
@@ -830,6 +866,42 @@ public partial class PipWindow : Window
             Foreground = (Brush)FindResource("MutedTextBrush"),
         });
         return panel;
+    }
+
+    /// <summary>Carte d'un son : grande icône et titre, avec de la place en haut pour la légende.</summary>
+    private Border CreateAudioCard(string glyph, string title)
+    {
+        var panel = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+        panel.Children.Add(new TextBlock
+        {
+            Text = glyph,
+            FontFamily = (FontFamily)FindResource("IconFont"),
+            FontSize = 42,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            Foreground = (Brush)FindResource("AccentBrush"),
+        });
+        panel.Children.Add(new TextBlock
+        {
+            Text = title,
+            FontSize = 15,
+            FontWeight = FontWeights.SemiBold,
+            Margin = new Thickness(0, 12, 0, 0),
+            MaxWidth = 320,
+            TextTrimming = TextTrimming.CharacterEllipsis,
+            TextAlignment = TextAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            Foreground = (Brush)FindResource("TextBrush"),
+        });
+
+        return new Border
+        {
+            MinWidth = 300,
+            MinHeight = 170,
+            Padding = new Thickness(24, 44, 24, 20),
+            CornerRadius = new CornerRadius(10),
+            Background = (Brush)FindResource("InputBrush"),
+            Child = panel,
+        };
     }
 
     private TimeSpan ReadingTime(string text)
