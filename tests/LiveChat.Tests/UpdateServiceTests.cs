@@ -134,6 +134,18 @@ public class UpdateServiceTests
     }
 
     [Fact]
+    public void PreloadAssemblies_LoadsLazyDependenciesQuickly()
+    {
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+
+        UpdateService.PreloadAssemblies();
+
+        // Utilisée seulement pour les GIF : c'est elle qui manquait à la fermeture pendant la mise à jour.
+        Assert.Contains(AppDomain.CurrentDomain.GetAssemblies(), a => a.GetName().Name == "WpfAnimatedGif");
+        Assert.True(stopwatch.Elapsed < TimeSpan.FromSeconds(5), $"Préchargement trop long : {stopwatch.Elapsed}.");
+    }
+
+    [Fact]
     public void CleanupPreviousUpdate_KeepsUnrelatedOldFiles()
     {
         // LiveChat.exe lancé depuis Téléchargements : les autres fichiers .old ne lui appartiennent pas.

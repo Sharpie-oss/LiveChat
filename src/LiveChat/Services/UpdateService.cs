@@ -324,15 +324,15 @@ public sealed class UpdateService
     /// assemblies dans son propre .exe : une fois celui-ci remplacé, l'ancienne instance ne peut plus en charger de
     /// nouvelles (en v2.0.0, la fermeture échouait sur WpfAnimatedGif quand aucun GIF n'avait été affiché).
     /// </summary>
-    private static void PreloadAssemblies()
+    internal static void PreloadAssemblies()
     {
         var pending = new Stack<System.Reflection.Assembly>(AppDomain.CurrentDomain.GetAssemblies());
-        var seen = new HashSet<string>(pending.Select(a => a.FullName ?? ""), StringComparer.OrdinalIgnoreCase);
+        var seen = new HashSet<string>(pending.Select(a => a.GetName().Name ?? ""), StringComparer.OrdinalIgnoreCase);
         while (pending.TryPop(out var assembly))
         {
             foreach (var reference in assembly.GetReferencedAssemblies())
             {
-                if (!seen.Add(reference.FullName))
+                if (reference.Name is null || !seen.Add(reference.Name))
                 {
                     continue;
                 }

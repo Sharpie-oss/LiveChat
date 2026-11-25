@@ -23,7 +23,7 @@
 ### Technique
 
 - Les notes de release sont tirées de ce fichier (en français) : c'est ce texte qu'affiche la fenêtre de mise à jour, au lieu de la liste des pull requests générée par GitHub.
-- 21 nouveaux tests (110 au total).
+- 22 nouveaux tests (111 au total).
 
 ## 2.0.1 — Lecture des vidéos
 

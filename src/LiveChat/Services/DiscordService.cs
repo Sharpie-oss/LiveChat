@@ -534,12 +534,12 @@ public sealed class DiscordService : IAsyncDisposable
         var sources = WithForwardedMessages(message);
 
         var attachments = sources
-            .SelectMany(m => m.Attachments)
+            .SelectMany(m => m.Attachments ?? [])
             .Select(a => new AttachmentInfo(a.Url, a.Filename, a.ContentType))
             .ToList();
 
         var embeds = sources
-            .SelectMany(m => m.Embeds)
+            .SelectMany(m => m.Embeds ?? [])
             .Select(e => new EmbedInfo(
                 e.Type.ToString(),
                 e.Url,
