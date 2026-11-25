@@ -1,6 +1,16 @@
 # Changelog
 
-## 2.0.2 — Corrections issues des tests de bout en bout
+## 2.0.2 — Corrections et nouveautés issues des tests de bout en bout
+
+### Nouveautés
+
+- **Stickers** : les stickers PNG et GIF sont affichés. Les stickers APNG (animés) s'affichent sur leur première image, et les stickers Lottie ne sont pas pris en charge.
+- **Messages transférés** : un média transféré dans le salon (bouton « Transférer » de Discord) est affiché, avec le texte du message d'origine en légende.
+- **GIF longs** : un GIF plus long que la durée d'affichage des images est montré jusqu'au bout, comme les GIF Tenor, dans la limite de la durée maximale des vidéos.
+- **Mises à jour** : la recherche se fait au démarrage puis toutes les 6 heures, car LiveChat reste souvent ouvert plusieurs jours.
+- **Messages d'erreur plus précis** : un lien expiré, une image abîmée et une vidéo dont le codec manque sont maintenant distingués.
+- **Accessibilité** : les boutons de la fenêtre et les champs des paramètres ont un nom lisible par les lecteurs d'écran, et l'épingle fonctionne aussi au clavier.
+- `--preview SPOILER_fichier.png` affiche le média flouté, comme sur Discord.
 
 ### Corrections de bugs
 
@@ -13,7 +23,7 @@
 ### Technique
 
 - Les notes de release sont tirées de ce fichier (en français) : c'est ce texte qu'affiche la fenêtre de mise à jour, au lieu de la liste des pull requests générée par GitHub.
-- 8 nouveaux tests (97 au total).
+- 21 nouveaux tests (110 au total).
 
 ## 2.0.1 — Lecture des vidéos
 
